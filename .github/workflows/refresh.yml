@@ -2,6 +2,11 @@ name: Refresh data
 on:
   schedule: [{cron: "17 5 * * *"}]
   workflow_dispatch:
+    inputs:
+      drill:
+        description: "Failure drill: add a module that always fails (nothing is committed to the registry)"
+        type: boolean
+        default: false
 permissions:
   contents: write
 concurrency: refresh
@@ -13,11 +18,14 @@ jobs:
         with: {ref: main}
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
+      - run: pip install -r requirements.txt
       - name: Tests first
         run: python -m unittest discover -s tests
       - name: Run modules (invalid output is never published; one failure does not block the others)
         id: run
         continue-on-error: true
+        env:
+          EXTRA_MODULES: ${{ inputs.drill && 'drill' || '' }}
         run: python pipeline/runner.py
       - name: Scan new data for secrets and personal data
         run: python tools/scan.py data
