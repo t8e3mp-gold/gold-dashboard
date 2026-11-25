@@ -23,7 +23,8 @@ function recCard(mod, rec) {
   const b = badge(mod, rec);
   s.append("المصدر: ");
   if (/^https?:\/\//.test(rec.source.url)) { const l = $("a", null, rec.source.name); l.href = rec.source.url; l.rel = "noopener"; s.append(l); } else s.append(rec.source.name);
-  s.append(" | الوقت: " + rec.fetched_at + " | العمر: " + b.a.toFixed(1) + " ساعة ");
+  s.append(" | الوقت: "); const tm = $("bdi", null, rec.fetched_at); tm.dir = "ltr"; s.append(tm);
+  s.append(" | العمر: " + b.a.toFixed(1) + " ساعة ");
   s.append(b.wrap);
   if (mod.status !== "ok") s.append($("div", "src", "تحذير: آخر تشغيل للوحدة " + (mod.status === "failed" ? "فشل" : "قديم") + (mod.detail ? " (" + mod.detail + ")" : "")));
   c.append(s);
@@ -33,7 +34,7 @@ function recCard(mod, rec) {
 async function main() {
   const meta = await getJSON("data/meta.json");
   const g = ageH(meta.generated_at);
-  document.getElementById("gen").textContent = "آخر تحديث للبيانات: " + meta.generated_at + " (قبل " + g.toFixed(1) + " ساعة)" + (g > 26 ? " تحذير: البيانات قديمة" : "");
+  document.getElementById("gen").textContent = "آخر تحديث للبيانات: \u2066" + meta.generated_at + "\u2069 (قبل " + g.toFixed(1) + " ساعة)" + (g > 26 ? " تحذير: البيانات قديمة" : "");
   const tabs = {};
   for (const [id, m] of Object.entries(meta.modules)) { const t = (m.view && m.view.tab) || "modules"; (tabs[t] = tabs[t] || []).push([id, m]); }
   const nav = document.getElementById("tabs"), main = document.getElementById("main");
