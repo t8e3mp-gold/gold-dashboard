@@ -1,0 +1,4 @@
+{"type": "object", "required": ["meta", "records"],
+ "properties": {"records": {"type": "array", "minItems": 8, "maxItems": 8,
+   "items": {"type": "object", "required": ["stats"], "properties": {"value": {"type": "array", "minItems": 20},
+     "stats": {"type": "object", "required": ["poc", "vah", "val", "total_volume", "bars_used", "method"]}}}}}}

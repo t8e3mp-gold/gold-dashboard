@@ -1,1 +1,1 @@
-{"enabled": ["hello", "price-spot", "klines", "flow"]}
+{"enabled": ["hello", "price-spot", "klines", "flow", "volume-profile"]}

@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 8; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 9; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -60,11 +60,26 @@ function flowView(cs) {
   return w;
 }
 
+function profileView(rec) {
+  const rows = rec.value, st = rec.stats, w = $("div"), NS = "http://www.w3.org/2000/svg", H = 150, rh = H / rows.length;
+  const mx = Math.max(...rows.map(r => r[2])) || 1, svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 300 " + H); svg.setAttribute("class", "spark vprofile"); svg.setAttribute("role", "img"); svg.style.height = "160px";
+  rows.slice().reverse().forEach((r, i) => { const inVA = r[1] > st.val && r[0] < st.vah, isPoc = st.poc > r[0] && st.poc <= r[1] + 1e-9, bw = r[2] / mx * 290, rc = document.createElementNS(NS, "rect");
+    rc.setAttribute("x", 0); rc.setAttribute("y", (i * rh).toFixed(2)); rc.setAttribute("width", bw.toFixed(1)); rc.setAttribute("height", (rh - 0.4).toFixed(2));
+    rc.setAttribute("fill", isPoc ? "#D4AF37" : inVA ? "#8a7424" : "#3a3a3a"); svg.append(rc); });
+  w.append($("div", "val", "POC (أكثر سعر تداولا): " + Number(st.poc.toPrecision(7))));
+  w.append(svg);
+  w.append($("div", "src", "منطقة القيمة 70%: من " + Number(st.val.toPrecision(7)) + " إلى " + Number(st.vah.toPrecision(7)) + " | النطاق " + Number(st.price_low.toPrecision(7)) + " - " + Number(st.price_high.toPrecision(7)) + " | الشموع: " + st.bars_used + " (" + st.bar_size + ")" + (st.coverage_pct != null ? " | تغطية " + st.coverage_pct + "%" : " | تحذير: شموع ساعة فقط، تقريب خشن")));
+  w.append($("div", "src", "تقدير: حجم كل شمعة موزّع بالتساوي على مدى سعرها، وليس صفقات فعلية. ذهبي = POC، بني = منطقة القيمة."));
+  return w;
+}
+
 function recCard(mod, rec) {
   const c = $("div", "card");
   c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
   if (Array.isArray(rec.value) && /^candles/.test(rec.unit)) c.append(candleView(rec.value));
   else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
+  else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
   const b = badge(mod, rec);
@@ -81,7 +96,7 @@ function recCard(mod, rec) {
     x.append(ck.trades != null ? " | الفرق " + ck.diff_pct + "% (" + ck.trades + " صفقة)" : ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
     x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
     s.append(x);
-  } else if (rec.id.indexOf("price.") === 0 || rec.id.indexOf("flow.") === 0) s.append($("div", "src", "تحذير: بلا مطابقة مستقلة"));
+  } else if (rec.id.indexOf("price.") === 0 || rec.id.indexOf("flow.") === 0 || rec.id.indexOf("profile.") === 0) s.append($("div", "src", "تحذير: بلا مطابقة مستقلة"));
   c.append(s);
   return c;
 }
