@@ -1,0 +1,4 @@
+# R-20261125-07: Cloudflare and GitHub free-tier facts
+- Read Nov 25: Workers Free is 100,000 requests a day and 10 ms CPU per request (https://www.cloudflare.com/plans/developer-platform-pricing/, https://developers.cloudflare.com/workers/platform/pricing/). Free workers.dev subdomain, no domain needed (https://developers.cloudflare.com/workers/configuration/routing/workers-dev/). **Not verified**: whether signing up asks for a card. So Cloudflare is not used (no new accounts).
+- GitHub: Pages from a private repo needs a paid plan; Pages limits 1 GB and 10 builds/hour; scheduled workflows in public repos pause after 60 days of no repo activity (read earlier). GitHub's scheduler did not fire two test schedules on Nov 25 (our own test, 0 runs in 27 minutes).
+- Verdict: use-with-limits. GitHub Pages and Actions stay the base; refresh Plan B is the Instinct keeper.
