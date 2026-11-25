@@ -74,6 +74,33 @@ class Runner(unittest.TestCase):
     def test_missing_input(self):
         d = self.mk({"m": (["nope"], "m", self.ok("m"))}); dd = os.path.join(d, "data"); os.makedirs(dd)
         self.assertEqual(runner.run_module(runner.load_manifests(d)[0]["m"], dd, d)[0], "failed")
+    def test_unknown_schema_keyword_rejected(self):
+        self.assertTrue(V.lint_schema({"type": "object", "properties": {"a": {"maxLength": 3}}}))
+        self.assertEqual(V.lint_schema({"type": "object", "properties": {"a": {"type": "string"}}}), [])
+    def test_unproduced_input_flagged(self):
+        d = self.mk({"m": (["nope"], "m", self.ok("m"))}); dd = os.path.join(d, "data"); os.makedirs(dd)
+        mans = runner.load_manifests(d)[0]
+        self.assertTrue(runner.lint_manifests(mans, d, dd))
+        open(os.path.join(dd, "nope.json"), "w").write("{}")
+        self.assertEqual(runner.lint_manifests(mans, d, dd), [])
+    def test_history_append_ok_and_drop_rejected(self):
+        rec = lambda i, t: {"id": i, "fetched_at": t}
+        old = {"records": [rec("a", "2026-11-25T10:00:00Z")]}
+        self.assertEqual(runner.check_history(old, {"records": [rec("a", "2026-11-25T10:00:00Z"), rec("a", "2026-11-26T10:00:00Z")]}), [])
+        self.assertTrue(runner.check_history(old, {"records": [rec("a", "2026-11-26T10:00:00Z")]}))
+    def test_history_enforced_in_run(self):
+        d = self.mk({"m": ([], "m", self.ok("m"))}); dd = os.path.join(d, "data"); os.makedirs(dd)
+        mp = os.path.join(d, "modules", "m", "manifest.json"); man = json.load(open(mp)); man["history"] = ["m"]; json.dump(man, open(mp, "w"))
+        old = {"meta": {}, "records": [{"id": "gone", "fetched_at": "2026-11-20T10:00:00Z"}]}
+        json.dump(old, open(os.path.join(dd, "m.json"), "w"))
+        st, detail = runner.run_module(runner.load_manifests(d)[0]["m"], dd, d)
+        self.assertEqual(st, "failed"); self.assertIn("history", detail)
+        self.assertEqual(json.load(open(os.path.join(dd, "m.json"))), old)
+    def test_real_repo_lint(self):
+        mans, _ = runner.load_manifests(ROOT)
+        self.assertEqual(runner.lint_manifests(mans, ROOT), [])
+        for f in os.listdir(os.path.join(ROOT, "schemas")):
+            self.assertEqual(V.lint_schema(V.load(os.path.join(ROOT, "schemas", f))), [], f)
     def test_real_repo_manifests(self):
         mans, errs = runner.load_manifests(ROOT)
         self.assertEqual(errs, []); runner.order(mans)
