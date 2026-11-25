@@ -34,17 +34,17 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "price.xautusdt",
-   "value": 3559.29,
+   "value": 3572.67,
    "title_ar": "سعر الذهب XAUT",
    "checked_against": {
     "source": "OKX spot tickers",
     "url": "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-    "value": 3558.0,
-    "diff_pct": 0.0363,
+    "value": 3572.5,
+    "diff_pct": 0.0048,
     "ok": true,
     "limit_pct": 0.5
    }
@@ -55,11 +55,11 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "change24h.xautusdt",
-   "value": 0.324,
+   "value": 0.785,
    "title_ar": "تغيّر 24 ساعة الذهب XAUT",
    "checked_against": null
   },
@@ -69,17 +69,17 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "price.bnbusdt",
-   "value": 552.04,
+   "value": 551.24,
    "title_ar": "سعر BNB",
    "checked_against": {
     "source": "OKX spot tickers",
     "url": "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-    "value": 552.16,
-    "diff_pct": 0.0217,
+    "value": 551.3,
+    "diff_pct": 0.0109,
     "ok": true,
     "limit_pct": 0.5
    }
@@ -90,11 +90,11 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "change24h.bnbusdt",
-   "value": 0.655,
+   "value": 0.727,
    "title_ar": "تغيّر 24 ساعة BNB",
    "checked_against": null
   },
@@ -104,17 +104,17 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "price.ethusdt",
-   "value": 1683.07,
+   "value": 1681.1,
    "title_ar": "سعر ETH",
    "checked_against": {
     "source": "OKX spot tickers",
     "url": "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-    "value": 1682.9,
-    "diff_pct": 0.0101,
+    "value": 1681.03,
+    "diff_pct": 0.0042,
     "ok": true,
     "limit_pct": 0.5
    }
@@ -125,11 +125,11 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "change24h.ethusdt",
-   "value": 0.52,
+   "value": 0.625,
    "title_ar": "تغيّر 24 ساعة ETH",
    "checked_against": null
   },
@@ -139,17 +139,17 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "price.solusdt",
-   "value": 70.37,
+   "value": 70.31,
    "title_ar": "سعر SOL",
    "checked_against": {
     "source": "OKX spot tickers",
     "url": "https://www.okx.com/api/v5/market/tickers?instType=SPOT",
-    "value": 70.38,
-    "diff_pct": 0.0142,
+    "value": 70.31,
+    "diff_pct": 0.0,
     "ok": true,
     "limit_pct": 0.5
    }
@@ -160,11 +160,11 @@
     "name": "Binance public data mirror",
     "url": "https://data-api.binance.vision/api/v3/ticker/24hr"
    },
-   "fetched_at": "2026-11-25T20:10:54Z",
+   "fetched_at": "2026-11-25T20:30:26Z",
    "label": "measured",
    "max_age_hours": 8,
    "id": "change24h.solusdt",
-   "value": 1.867,
+   "value": 1.854,
    "title_ar": "تغيّر 24 ساعة SOL",
    "checked_against": null
   }

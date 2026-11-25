@@ -1,13 +1,13 @@
 {
- "app_version": 8,
- "generated_at": "2026-11-25T20:10:41Z",
+ "app_version": 9,
+ "generated_at": "2026-11-25T20:30:18Z",
  "manifest_errors": [],
  "modules": {
   "flow": {
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:10:41Z",
+   "last_ok": "2026-11-25T20:30:18Z",
    "max_age_hours": 8,
    "name_ar": "تدفق الشراء والبيع (الدلتا) لـ XAUT وBNB وETH وSOL",
    "name_en": "Buy/sell volume flow (delta)",
@@ -30,7 +30,7 @@
    "detail": "",
    "kind": "compute",
    "label": "measured",
-   "last_ok": "2026-11-25T20:10:41Z",
+   "last_ok": "2026-11-25T20:30:18Z",
    "max_age_hours": 48,
    "name_ar": "وحدة تجريبية (قالب)",
    "name_en": "Hello (template module)",
@@ -53,7 +53,7 @@
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:10:41Z",
+   "last_ok": "2026-11-25T20:30:18Z",
    "max_age_hours": 8,
    "name_ar": "الشموع (ساعة ويوم) لـ XAUT وBNB وETH وSOL",
    "name_en": "Candles 1h and 1d",
@@ -76,7 +76,7 @@
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:10:41Z",
+   "last_ok": "2026-11-25T20:30:18Z",
    "max_age_hours": 8,
    "name_ar": "أسعار السبوت (XAUT وBNB وETH وSOL)",
    "name_en": "Spot prices",
@@ -93,6 +93,29 @@
     "tab": "modules",
     "title": "سعر السبوت",
     "type": "number"
+   }
+  },
+  "volume-profile": {
+   "detail": "",
+   "kind": "compute",
+   "label": "measured",
+   "last_ok": "2026-11-25T20:30:18Z",
+   "max_age_hours": 8,
+   "name_ar": "بروفايل الحجم (POC ومنطقة القيمة) لـ XAUT وBNB وETH وSOL",
+   "name_en": "Volume profile",
+   "outputs": [
+    "volume-profile"
+   ],
+   "source": {
+    "name": "Binance public data mirror, 1-minute candles (volume spread across each candle's range)",
+    "url": "https://data-api.binance.vision/api/v3/klines"
+   },
+   "status": "ok",
+   "version": "1.0.0",
+   "view": {
+    "tab": "modules",
+    "title": "بروفايل الحجم",
+    "type": "chart"
    }
   }
  },
