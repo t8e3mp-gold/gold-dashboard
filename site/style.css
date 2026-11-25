@@ -1,0 +1,16 @@
+:root{--gold:#D4AF37;--bg:#000;--card:#111;--line:#2a2410;--txt:#eee;--mut:#9a8f6a;--ok:#1f9d55;--bad:#d64545;--warn:#c98a00}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,"Noto Naskh Arabic",Tahoma,sans-serif;line-height:1.6}
+header,main,footer{padding:12px 16px;max-width:720px;margin:auto}
+h1{color:var(--gold);font-size:1.3rem;margin:.2rem 0}
+.muted{color:var(--mut);font-size:.85rem}
+nav{display:flex;gap:8px;overflow-x:auto;padding:8px 16px;max-width:720px;margin:auto}
+nav button{background:var(--card);color:var(--gold);border:1px solid var(--line);border-radius:18px;padding:6px 14px;font:inherit;white-space:nowrap}
+nav button.on{background:var(--gold);color:#000}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;margin:10px 0}
+.card h2{margin:0 0 6px;font-size:1rem;color:var(--gold)}
+.val{font-size:1.2rem;direction:ltr;text-align:right;word-break:break-all}
+.pill{display:inline-block;border-radius:10px;padding:0 8px;font-size:.75rem;margin-inline-start:6px;color:#fff}
+.p-ok{background:var(--ok)}.p-bad{background:var(--bad)}.p-warn{background:var(--warn)}.p-lbl{background:#444}
+.src{font-size:.78rem;color:var(--mut)}
+.src a{color:var(--mut)}
