@@ -2,7 +2,7 @@ name: Deploy Pages
 on:
   push:
     branches: [main]
-    paths: ["site/**", "data/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_run:
     workflows: ["Refresh data"]
     types: [completed]
@@ -11,7 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
-concurrency: {group: pages, cancel-in-progress: true}
+concurrency: {group: pages, cancel-in-progress: false}
 jobs:
   deploy:
     runs-on: ubuntu-latest
