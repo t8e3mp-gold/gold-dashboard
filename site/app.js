@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 11; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 12; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -7,6 +7,12 @@ const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className
 let offsetMs = Number(localStorage.getItem("gd-offset") || 0), offline = false, bust = String(Math.floor(Date.now() / 6e4));
 const nowMs = () => Date.now() + offsetMs;
 const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
+
+// Cairo time first, UTC second (display only). Source names in Arabic for the Arabic UI.
+const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
+function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
+function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
+const arSrc = t => String(t).replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -56,7 +62,7 @@ function flowView(cs) {
     rc.setAttribute("x", (i * bw + 0.5).toFixed(1)); rc.setAttribute("width", (bw - 1).toFixed(1)); rc.setAttribute("height", Math.max(h, 0.5).toFixed(1));
     rc.setAttribute("y", (r[4] >= 0 ? 30 - h : 30).toFixed(1)); rc.setAttribute("fill", r[4] >= 0 ? "#1f9d55" : "#d64545"); svg.append(rc); });
   w.append(svg);
-  w.append($("div", "src", "أخضر = المشترون المبادرون أكثر، أحمر = البائعون المبادرون أكثر (آخر " + bars.length + " شمعة). بيانات Binance فقط، وهي ليست نية المتداول."));
+  w.append($("div", "src", "أخضر = المشترون المبادرون أكثر، أحمر = البائعون المبادرون أكثر (آخر " + bars.length + " شمعة). بيانات باينانس فقط، وهي ليست نية المتداول. الشموع المغلقة فقط: الساعة الجارية غير محسوبة، لذلك قد يظهر البيع في ساعة أغلقت بينما السعر يصعد الآن."));
   return w;
 }
 
@@ -67,10 +73,10 @@ function profileView(rec) {
   rows.slice().reverse().forEach((r, i) => { const inVA = r[1] > st.val && r[0] < st.vah, isPoc = st.poc > r[0] && st.poc <= r[1] + 1e-9, bw = r[2] / mx * 290, rc = document.createElementNS(NS, "rect");
     rc.setAttribute("x", 0); rc.setAttribute("y", (i * rh).toFixed(2)); rc.setAttribute("width", bw.toFixed(1)); rc.setAttribute("height", (rh - 0.4).toFixed(2));
     rc.setAttribute("fill", isPoc ? "#D4AF37" : inVA ? "#8a7424" : "#3a3a3a"); svg.append(rc); });
-  w.append($("div", "val", "POC (أكثر سعر تداولا): " + Number(st.poc.toPrecision(7))));
+  w.append($("div", "val", "أكثر سعر تداولا: " + Number(st.poc.toPrecision(7))));
   w.append(svg);
   w.append($("div", "src", "منطقة القيمة 70%: من " + Number(st.val.toPrecision(7)) + " إلى " + Number(st.vah.toPrecision(7)) + " | النطاق " + Number(st.price_low.toPrecision(7)) + " - " + Number(st.price_high.toPrecision(7)) + " | الشموع: " + st.bars_used + " (" + st.bar_size + ")" + (st.coverage_pct != null ? " | تغطية " + st.coverage_pct + "%" : " | تحذير: شموع ساعة فقط، تقريب خشن")));
-  w.append($("div", "src", "تقدير: حجم كل شمعة موزّع بالتساوي على مدى سعرها، وليس صفقات فعلية. ذهبي = POC، بني = منطقة القيمة."));
+  w.append($("div", "src", "تقدير: حجم كل شمعة موزّع بالتساوي على مدى سعرها، وليس صفقات فعلية. ذهبي = أكثر سعر تداولا، بني = منطقة القيمة."));
   return w;
 }
 
@@ -93,7 +99,9 @@ function intentDivView(rec) {
 
 function recCard(mod, rec) {
   const c = $("div", "card");
-  c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
+  const ttl = rec.title_ar || (mod.view ? mod.view.title : rec.id);
+  c.append($("h2", null, rec.id.indexOf("price.") === 0 ? ttl + " (لقطة محفوظة وليست حية)" : ttl));
+  if (rec.id.indexOf("price.") === 0) c.append($("div", "src", "هذه لقطة من آخر تحديث للبيانات وقد تختلف عن السعر الحي في أعلى الصفحة."));
   if (Array.isArray(rec.value) && /^candles/.test(rec.unit)) c.append(candleView(rec.value));
   else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
   else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
@@ -103,14 +111,14 @@ function recCard(mod, rec) {
   const s = $("div", "src");
   const b = badge(mod, rec);
   s.append("المصدر: ");
-  if (/^https?:\/\//.test(rec.source.url)) { const l = $("a", null, rec.source.name); l.href = rec.source.url; l.rel = "noopener"; s.append(l); } else s.append(rec.source.name);
-  s.append(" | الوقت: "); const tm = $("bdi", null, rec.fetched_at); tm.dir = "ltr"; s.append(tm);
+  if (/^https?:\/\//.test(rec.source.url)) { const l = $("a", null, arSrc(rec.source.name)); l.href = rec.source.url; l.rel = "noopener"; s.append(l); } else s.append(arSrc(rec.source.name));
+  s.append(" | الوقت: "); s.append(timeEl(Date.parse(rec.fetched_at)));
   s.append(" | العمر: " + b.a.toFixed(1) + " ساعة ");
   s.append(b.wrap);
   if (mod.status !== "ok") s.append($("div", "src", "تحذير: آخر تشغيل للوحدة " + (mod.status === "failed" ? "فشل" : "قديم") + (mod.detail ? " (" + mod.detail + ")" : "")));
   const ck = rec.checked_against;
   if (ck) {
-    const x = $("div", "src", "مطابقة مع " + ck.source + (ck.value != null ? ": " : ""));
+    const x = $("div", "src", "مطابقة مع " + arSrc(ck.source) + (ck.value != null ? ": " : ""));
     if (ck.value != null) { const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v); }
     x.append(ck.trades != null ? " | الفرق " + ck.diff_pct + "% (" + ck.trades + " صفقة)" : ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
     x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
@@ -124,12 +132,12 @@ function recCard(mod, rec) {
 // ---- Live prices (B1b): fetched by this page from public exchange APIs, never from our data files. Label: live.
 const LIVE = {syms: ["XAUT", "BNB", "ETH", "SOL"], pollMs: 10000, checkEvery: 3, maxDiff: 0.5, staleSec: 35};
 const LSRC = {
-  binance: {name: "Binance public data mirror", url: "https://data-api.binance.vision/api/v3/ticker/price",
+  binance: {name: "مرآة بيانات باينانس العامة", url: "https://data-api.binance.vision/api/v3/ticker/price",
     get: async () => { const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbols=" + encodeURIComponent(JSON.stringify(LIVE.syms.map(x => x + "USDT"))), {cache: "no-store"}); if (!r.ok) throw new Error("binance " + r.status);
       const o = {}; for (const t of await r.json()) o[t.symbol.slice(0, -4)] = Number(t.price); return o; }},
-  okx: {name: "OKX", url: "https://www.okx.com/api/v5/market/ticker",
+  okx: {name: "أو كي إكس", url: "https://www.okx.com/api/v5/market/ticker",
     get: async () => { const o = {}; await Promise.all(LIVE.syms.map(async s => { const r = await fetch("https://www.okx.com/api/v5/market/ticker?instId=" + s + "-USDT", {cache: "no-store"}); if (!r.ok) throw new Error("okx " + r.status); o[s] = Number((await r.json()).data[0].last); })); return o; }},
-  gate: {name: "Gate.io", url: "https://api.gateio.ws/api/v4/spot/tickers",
+  gate: {name: "جيت", url: "https://api.gateio.ws/api/v4/spot/tickers",
     get: async () => { const o = {}; await Promise.all(LIVE.syms.map(async s => { const r = await fetch("https://api.gateio.ws/api/v4/spot/tickers?currency_pair=" + s + "_USDT", {cache: "no-store"}); if (!r.ok) throw new Error("gate " + r.status); o[s] = Number((await r.json())[0].last); })); return o; }},
 };
 const validPrices = o => LIVE.syms.every(s => Number.isFinite(o[s]) && o[s] > 0);
@@ -156,7 +164,7 @@ function renderLive() {
   const box = document.getElementById("live"); if (!box) return;
   box.replaceChildren(); box.append($("h2", null, "الأسعار الحية (من المتصفح مباشرة)"));
   const l = live.ok, age = l ? (performance.now() - l.t0) / 1000 : null, stale = !l || age > LIVE.staleSec;
-  if (!l) { box.append($("div", "src", "تحذير: تعذّر جلب الأسعار الحية من كل المصادر: " + Object.entries(live.errs).map(([k, v]) => k + " " + v).join("، "))); return; }
+  if (!l) { box.append($("div", "src", "تحذير: تعذّر جلب الأسعار الحية من كل المصادر: " + Object.entries(live.errs).map(([k, v]) => arSrc(k) + " " + arSrc(v)).join("، "))); return; }
   for (const s of LIVE.syms) {
     const row = $("div", "lrow"); row.append($("span", "lsym", s));
     const v = $("bdi", "val", String(l.prices[s])); v.dir = "ltr"; row.append(v);
@@ -166,10 +174,10 @@ function renderLive() {
   }
   const f = $("div", "src"); f.append($("span", "pill p-lbl", LABELS.live), $("span", "pill " + (stale ? "p-bad" : "p-ok"), stale ? "قديمة" : "محدّثة"));
   f.append(" المصدر: "); const a = $("a", null, LSRC[l.name].name); a.href = LSRC[l.name].url; a.rel = "noopener"; f.append(a);
-  if (l.name !== "binance") f.append(" (بديل: " + Object.keys(live.errs).join("، ") + " تعذّر)");
+  if (l.name !== "binance") f.append(" (بديل: " + Object.keys(live.errs).map(arSrc).join("، ") + " تعذّر)");
   if (l.chk) f.append(" | المطابقة: " + LSRC[l.chk.k].name);
   else f.append(" | تحذير: بلا مطابقة");
-  f.append(" | الوقت: "); const tm = $("bdi", null, new Date(l.at).toISOString().slice(0, 19) + "Z"); tm.dir = "ltr"; f.append(tm);
+  f.append(" | الوقت: "); f.append(timeEl(l.at));
   f.append(" | العمر: " + Math.round(age) + " ث");
   box.append(f);
 }
@@ -188,11 +196,11 @@ function startLive(main) {
 // ---- Live order book view: browser only, labelled live, nothing stored, never used in a backtest (no free history exists).
 const OB = {maxBand: 0.25, pollMs: 10000, staleSec: 35};
 const OBSRC = {
-  binance: {name: "Binance public data mirror", url: "https://data-api.binance.vision/api/v3/depth",
+  binance: {name: "مرآة بيانات باينانس العامة", url: "https://data-api.binance.vision/api/v3/depth",
     get: async s => { const r = await fetch("https://data-api.binance.vision/api/v3/depth?symbol=" + s + "USDT&limit=100", {cache: "no-store"}); if (!r.ok) throw new Error("binance " + r.status); const d = await r.json(); return {bids: d.bids, asks: d.asks}; }},
-  okx: {name: "OKX", url: "https://www.okx.com/api/v5/market/books",
+  okx: {name: "أو كي إكس", url: "https://www.okx.com/api/v5/market/books",
     get: async s => { const r = await fetch("https://www.okx.com/api/v5/market/books?instId=" + s + "-USDT&sz=100", {cache: "no-store"}); if (!r.ok) throw new Error("okx " + r.status); const d = (await r.json()).data[0]; return {bids: d.bids, asks: d.asks}; }},
-  gate: {name: "Gate.io", url: "https://api.gateio.ws/api/v4/spot/order_book",
+  gate: {name: "جيت", url: "https://api.gateio.ws/api/v4/spot/order_book",
     get: async s => { const r = await fetch("https://api.gateio.ws/api/v4/spot/order_book?currency_pair=" + s + "_USDT&limit=100", {cache: "no-store"}); if (!r.ok) throw new Error("gate " + r.status); const d = await r.json(); return {bids: d.bids, asks: d.asks}; }},
 };
 // Pure function (tested): imbalance inside a price band around the mid. band = smaller of OB.maxBand and what both sides of the 100 levels really cover.
@@ -222,22 +230,22 @@ function renderOb() {
   const box = document.getElementById("obook"); if (!box) return;
   box.replaceChildren(); box.append($("h2", null, "دفتر الأوامر الحي (من المتصفح مباشرة)"));
   const o = ob.ok, age = o ? (performance.now() - o.t0) / 1000 : null, stale = !o || age > OB.staleSec;
-  if (!o) { box.append($("div", "src", "تحذير: تعذّر جلب دفتر الأوامر من كل المصادر: " + Object.entries(ob.errs).map(([k, v]) => k + " " + v).join("، "))); return; }
+  if (!o) { box.append($("div", "src", "تحذير: تعذّر جلب دفتر الأوامر من كل المصادر: " + Object.entries(ob.errs).map(([k, v]) => arSrc(k) + " " + arSrc(v)).join("، "))); return; }
   for (const s of LIVE.syms) {
     const m = o.m[s], row = $("div", "lrow"); row.append($("span", "lsym", s));
     const pct = Math.round((m.imb + 1) / 2 * 100), bar = $("span", "obbar"), g = $("i", "obg"), r = $("i", "obr");
     g.style.width = pct + "%"; r.style.width = (100 - pct) + "%"; bar.append(g, r); row.append(bar);
     const t = $("bdi", "src", (m.imb >= 0 ? "+" : "") + (m.imb * 100).toFixed(0) + "%"); t.dir = "ltr"; row.append(t);
     box.append(row);
-    const d = $("div", "src", "نطاق ±" + m.band.toFixed(3) + "% | شراء " + Number(m.bv.toPrecision(5)) + " | بيع " + Number(m.av.toPrecision(5)) + " | الفارق " + m.spreadPct.toFixed(4) + "%");
+    const d = $("div", "src", "اختلال الشراء/البيع (الشراء ناقص البيع على مجموعهما) داخل نطاق ±" + m.band.toFixed(3) + "% | شراء " + Number(m.bv.toPrecision(5)) + " | بيع " + Number(m.av.toPrecision(5)) + " | فارق السعر بين أفضل شراء وأفضل بيع " + m.spreadPct.toFixed(4) + "%");
     box.append(d);
   }
   const f = $("div", "src"); f.append($("span", "pill p-lbl", LABELS.live), $("span", "pill " + (stale ? "p-bad" : "p-ok"), stale ? "قديمة" : "محدّثة"));
   f.append(" المصدر: "); const a = $("a", null, OBSRC[o.name].name); a.href = OBSRC[o.name].url; a.rel = "noopener"; f.append(a);
-  if (o.name !== "binance") f.append(" (بديل: " + Object.keys(ob.errs).join("، ") + " تعذّر)");
-  f.append(" | الوقت: "); const tm = $("bdi", null, new Date(o.at).toISOString().slice(0, 19) + "Z"); tm.dir = "ltr"; f.append(tm);
+  if (o.name !== "binance") f.append(" (بديل: " + Object.keys(ob.errs).map(arSrc).join("، ") + " تعذّر)");
+  f.append(" | الوقت: "); f.append(timeEl(o.at));
   f.append(" | العمر: " + Math.round(age) + " ث"); box.append(f);
-  box.append($("div", "src", "لقطة لحظية لأول 100 مستوى فقط، أخضر = أوامر شراء واقفة أكثر، أحمر = أوامر بيع أكثر. الأوامر الواقفة قد تُلغى أو تكون وهمية، ولا تدل على نية. لا يُحفظ لها تاريخ ولا تدخل في أي اختبار رجعي."));
+  box.append($("div", "src", "النسبة المئوية بجوار الشريط هي اختلال الشراء/البيع. عرض النطاق يختلف من عملة لأخرى (مثلا ETH أضيق بكثير)، فلا تقارن الأشرطة بين العملات. لقطة لحظية لأول 100 مستوى فقط، أخضر = أوامر شراء واقفة أكثر، أحمر = أوامر بيع أكثر. الأوامر الواقفة قد تُلغى أو تكون وهمية، ولا تدل على نية. لا يُحفظ لها تاريخ ولا تدخل في أي اختبار رجعي."));
 }
 function startOb(anchor) {
   const box = $("section", "live"); box.id = "obook"; anchor.after(box); renderOb();
@@ -251,7 +259,7 @@ async function main() {
   const meta = await getJSON("data/meta.json", true);
   bust = meta.generated_at;
   const g = ageH(meta.generated_at);
-  document.getElementById("gen").textContent = "آخر تحديث للبيانات: \u2066" + meta.generated_at + "\u2069 (قبل " + g.toFixed(1) + " ساعة)" + (g > 26 ? " تحذير: البيانات قديمة" : "");
+  document.getElementById("gen").textContent = "آخر تحديث للبيانات: \u2066" + cairoStr(Date.parse(meta.generated_at)) + " بتوقيت القاهرة (UTC " + meta.generated_at.slice(11, 19) + ")\u2069 (قبل " + g.toFixed(1) + " ساعة)" + (g > 26 ? " تحذير: البيانات قديمة" : "");
   const bad = Object.entries(meta.modules).filter(([, m]) => m.status !== "ok").map(([id]) => id);
   const msgs = [];
   if (g > 26) msgs.push("البيانات قديمة: آخر تحديث قبل " + g.toFixed(0) + " ساعة (الحد 26 ساعة)");

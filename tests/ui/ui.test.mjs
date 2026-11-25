@@ -31,8 +31,11 @@ const fc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t =>
 ok(fc.length === 8 && fc.every(t => t.includes("الصافي") && t.includes("نسبة الشراء") && (t.includes("الفرق") || t.includes("بلا مطابقة"))), "8 flow cards: net delta, buy share, and a check or a no-check warning");
 ok(await p.$$eval(".flowbars", e => e.length === 8 && e.every(x => x.querySelectorAll("rect").length === 48)), "8 delta bar charts of 48 bars");
 const vc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.startsWith("بروفايل الحجم"));
-ok(vc.length === 8 && vc.every(t => t.includes("POC") && t.includes("منطقة القيمة") && t.includes("تقدير")), "8 volume-profile cards: POC, value area, estimate disclaimer");
+ok(vc.length === 8 && vc.every(t => t.includes("أكثر سعر تداولا") && t.includes("منطقة القيمة") && t.includes("تقدير")), "8 volume-profile cards: POC, value area, estimate disclaimer");
 ok(await p.$$eval(".vprofile", e => e.length === 8 && e.every(x => x.querySelectorAll("rect").length === 60)), "8 profile charts of 60 bins");
+ok(pc.every(t => t.includes("لقطة محفوظة وليست حية")), "price cards are labelled as saved snapshots, not live");
+ok(fc.every(t => t.includes("الساعة الجارية غير محسوبة")), "flow cards say the open hour is not counted");
+{ const all = (await p.$$eval(".card .src", e => e.map(x => x.innerText.replace(/XAUT|BNB|ETH|SOL|USDT|UTC|\d|https?:\S+/g, "")))).join(" "); const m = all.match(/[A-Za-z]{3,}/g); ok(!m, "no Latin words left in card source lines" + (m ? ": " + [...new Set(m)].slice(0, 8).join(",") : "")); }
 await p.screenshot({ path: "/tmp/ui-fresh.png" });
 // 2. forced stale data: banner and stale badge appear
 p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });
@@ -76,14 +79,15 @@ async function liveCase(o) {
   return { q, hits, txt: await q.$eval("#live", e => e.innerText) };
 }
 { const { q, hits, txt } = await liveCase({ okxMul: { XAUT: 1.001 } });
-  ok(/XAUT\s*4000/.test(txt) && /ETH\s*3000/.test(txt) && txt.includes("حي") && txt.includes("متطابق") && txt.includes("Binance"), "live: 4 prices shown, label live, source, cross-check matched");
+  ok(/XAUT\s*4000/.test(txt) && /ETH\s*3000/.test(txt) && txt.includes("حي") && txt.includes("متطابق") && txt.includes("باينانس"), "live: 4 prices shown, label live, source, cross-check matched");
   ok(await q.$eval("body", e => e.scrollWidth <= window.innerWidth), "live: no horizontal overflow");
   await q.screenshot({ path: "/tmp/ui-live.png" });
   await q.waitForTimeout(10500); ok(hits.binance >= 2, "live: polls again after about 10 s (requests: " + hits.binance + ")"); }
 { const { txt } = await liveCase({ okxMul: { XAUT: 1.02 } }); ok(txt.includes("تحذير فرق"), "live: a 2% source difference raises the warning"); }
-{ const { txt } = await liveCase({ binance: "451" }); ok(/XAUT\s*4000/.test(txt) && txt.includes("OKX") && txt.includes("بديل"), "live: falls back to OKX when Binance answers 451"); }
-{ const { txt } = await liveCase({ binance: "zero" }); ok(txt.includes("OKX") && !/XAUT\s*0\b/.test(txt), "live: a zero price from Binance is rejected"); }
-{ const { txt } = await liveCase({ binance: "451", okx: "fail" }); ok(txt.includes("Gate.io") && /XAUT\s*4000/.test(txt), "live: falls back to Gate.io when Binance and OKX fail"); }
+{ const { txt } = await liveCase({}); ok(!/Binance|OKX|Gate/.test(txt) && txt.includes("بتوقيت القاهرة") && /UTC \d\d:\d\d:\d\d/.test(txt), "live: Arabic source names, Cairo time with UTC second"); }
+{ const { txt } = await liveCase({ binance: "451" }); ok(/XAUT\s*4000/.test(txt) && txt.includes("أو كي إكس") && txt.includes("بديل"), "live: falls back to OKX when Binance answers 451"); }
+{ const { txt } = await liveCase({ binance: "zero" }); ok(txt.includes("أو كي إكس") && !/XAUT\s*0\b/.test(txt), "live: a zero price from Binance is rejected"); }
+{ const { txt } = await liveCase({ binance: "451", okx: "fail" }); ok(txt.includes("جيت") && /XAUT\s*4000/.test(txt), "live: falls back to Gate.io when Binance and OKX fail"); }
 { const { txt } = await liveCase({ binance: "451", okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "live: all sources down shows a clear warning and no price"); }
 // 7. order book (browser only): mocked depth
 function book(mid, depth, bidMul, askMul) { const bids = [], asks = []; for (let i = 0; i < 100; i++) { bids.push([String((mid * (1 - 0.00002 * (i + 1))).toFixed(4)), String(depth * bidMul)]); asks.push([String((mid * (1 + 0.00002 * (i + 1))).toFixed(4)), String(depth * askMul)]); } return { bids, asks }; }
@@ -100,11 +104,13 @@ async function obCase(o) {
   return { q, txt: await q.$eval("#obook", e => e.innerText) };
 }
 { const { q, txt } = await obCase({});
-  ok(txt.includes("حي") && txt.includes("Binance") && /XAUT/.test(txt) && txt.includes("نطاق"), "order book: 4 rows, label live, source, band shown");
+  ok(txt.includes("حي") && txt.includes("باينانس") && /XAUT/.test(txt) && txt.includes("نطاق"), "order book: 4 rows, label live, source, band shown");
   ok(/XAUT[\s\S]*?\+50%/.test(txt) && /BNB[\s\S]*?\+0%/.test(txt), "order book: imbalance computed (XAUT bids 3x asks = +50%, BNB equal = 0%)");
   ok(await q.$eval("body", e => e.scrollWidth <= window.innerWidth), "order book: no horizontal overflow");
+  ok(txt.includes("اختلال الشراء/البيع") && txt.includes("فارق السعر بين أفضل شراء وأفضل بيع") && txt.includes("لا تقارن الأشرطة بين العملات"), "order book: imbalance, spread and per-coin band wording present");
+  ok(!/Binance|OKX|Gate|UTC\s*\d{4}/.test(txt) && txt.includes("بتوقيت القاهرة") && /UTC \d\d:\d\d:\d\d/.test(txt), "order book: Arabic source names, Cairo time with UTC second");
   await q.screenshot({ path: "/tmp/ui-ob.png" }); }
-{ const { txt } = await obCase({ binance: "451" }); ok(txt.includes("OKX") && txt.includes("بديل"), "order book: falls back to OKX"); }
-{ const { txt } = await obCase({ binance: "451", okx: "fail" }); ok(txt.includes("Gate.io"), "order book: falls back to Gate.io"); }
+{ const { txt } = await obCase({ binance: "451" }); ok(txt.includes("أو كي إكس") && txt.includes("بديل"), "order book: falls back to OKX"); }
+{ const { txt } = await obCase({ binance: "451", okx: "fail" }); ok(txt.includes("جيت"), "order book: falls back to Gate.io"); }
 { const { txt } = await obCase({ crossed: true, okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "order book: crossed or failed books are rejected with a clear warning"); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);
