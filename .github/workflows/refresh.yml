@@ -1,6 +1,6 @@
 name: Refresh data
 on:
-  schedule: [{cron: "37 16 * * *"}]
+  schedule: [{cron: "17 5 * * *"}]
   workflow_dispatch:
     inputs:
       drill:
