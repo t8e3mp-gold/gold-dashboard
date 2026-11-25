@@ -1,0 +1,15 @@
+{
+  "id": "hello",
+  "name_ar": "وحدة تجريبية (قالب)",
+  "name_en": "Hello (template module)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": [],
+  "outputs": [{"id": "hello", "schema": "schema/hello.schema.json"}],
+  "label": "measured",
+  "source": {"name": "Runner system clock (UTC)", "url": "https://github.com/t8e3mp-gold/gold-dashboard"},
+  "max_age_hours": 48,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "view": {"tab": "modules", "title": "وقت آخر تشغيل", "type": "text"}
+}
