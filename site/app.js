@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 14; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 15; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -12,7 +12,7 @@ const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
 const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
 function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
 function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
-const arSrc = t => String(t).replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
+const arSrc = t => String(t).replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -106,7 +106,72 @@ function xcheckView(rec) {
   return w;
 }
 
-function recCard(mod, rec) {
+const LV = {
+  res: {c: "#e5534b", w: 2, d: "", n: "مقاومة"}, resS: {c: "#e5534b", w: 5, d: "", n: "مقاومة أقوى"},
+  sup: {c: "#2ea043", w: 2, d: "", n: "دعم"}, supS: {c: "#2ea043", w: 5, d: "", n: "دعم قوي"},
+  watch: {c: "#D4AF37", w: 3, d: "7 4", n: "رقم المراقبة"}, bounce: {c: "#1fb6c9", w: 2, d: "2 3", n: "منطقة ارتداد"},
+  form: {c: "#a371f7", w: 3, d: "9 3 2 3", n: "ارتداد يتشكل"}, wall: {c: "#f0883e", w: 2, d: "1 3", n: "جدار أوامر حي"}, px: {c: "#ffffff", w: 1.5, d: "", n: "السعر"}};
+const NSv = "http://www.w3.org/2000/svg", svgEl = (t, a) => { const e = document.createElementNS(NSv, t); Object.entries(a).forEach(([k, v]) => e.setAttribute(k, v)); return e; };
+function lvSample(k) { const sv = svgEl("svg", {viewBox: "0 0 34 10", width: 34, height: 10, class: "lvs"}); sv.append(svgEl("line", {x1: 1, x2: 33, y1: 5, y2: 5, stroke: LV[k].c, "stroke-width": Math.min(LV[k].w, 5), "stroke-dasharray": LV[k].d})); return sv; }
+function legendView() { const g = $("div", "legend"); ["res", "resS", "sup", "supS", "watch", "bounce", "form", "wall", "px"].forEach(k => { const i = $("span", "lgi"); i.append(lvSample(k), LV[k].n); g.append(i); }); return g; }
+function ladder(items, price, f) {
+  // items: [{k, lo, hi}] ; draws horizontal lines on a price axis (display only). Labels are nudged apart so they never overlap.
+  const all = items.concat([{k: "px", lo: price, hi: price}]), mn = Math.min(...all.map(x => x.lo)), mx = Math.max(...all.map(x => x.hi)), pad = (mx - mn) * 0.06 || 1;
+  const H = 210, y = v => 10 + (1 - (v - (mn - pad)) / ((mx + pad) - (mn - pad))) * (H - 20), sv = svgEl("svg", {viewBox: "0 0 300 " + H, class: "ladder", role: "img", direction: "ltr"});
+  const rows = all.slice().sort((a, b) => b.hi - a.hi).map(it => ({it, yy: y((it.lo + it.hi) / 2)}));
+  let prev = -99; rows.forEach(r => { r.ly = Math.max(r.yy - 3, prev + 11); prev = r.ly; });
+  rows.forEach(({it, yy, ly}) => { const st = LV[it.k];
+    if (it.k === "bounce" || it.lo !== it.hi) sv.append(svgEl("rect", {x: 0, y: y(it.hi), width: 300, height: Math.max(y(it.lo) - y(it.hi), 3), fill: st.c, opacity: 0.18}));
+    sv.append(svgEl("line", {x1: 0, x2: 300, y1: yy, y2: yy, stroke: st.c, "stroke-width": st.w, "stroke-dasharray": st.d}));
+    const tx = svgEl("text", {x: 4, y: ly + 1, fill: st.c, "font-size": 9.5, "font-weight": "bold"}); tx.textContent = f(it.k === "px" ? price : (it.lo + it.hi) / 2) + "  " + st.n; sv.append(tx); });
+  return sv;
+}
+
+// Pure function (tested): choose what to show from the zones relative to a price. Display only, no new numbers are invented.
+function levelPick(zones, price) {
+  const above = zones.filter(z => z.mid > price).sort((x, y) => x.mid - y.mid), below = zones.filter(z => z.mid < price).sort((x, y) => y.mid - x.mid);
+  const near = (z) => Math.abs(z.mid - price) / price * 100 <= 5;
+  const best = (arr, cmp) => arr.filter(near).sort(cmp)[0] || null;
+  const res1 = above[0] || null, sup1 = below[0] || null;
+  const resStrong = best(above, (x, y) => y.strength - x.strength || x.mid - y.mid), supStrong = best(below, (x, y) => y.strength - x.strength || y.mid - x.mid);
+  const ratio = z => z.bounces / z.episodes;
+  const bounce = best(below.filter(z => z.episodes >= 3), (x, y) => ratio(y) - ratio(x) || y.episodes - x.episodes);
+  const all = zones.slice().sort((x, y) => Math.abs(x.mid - price) - Math.abs(y.mid - price));
+  return {res1, resStrong, sup1, supStrong, bounce, watch: all[0] || null};
+}
+function levelsView(rec, sym) {
+  const w = $("div"); w.dataset.levels = "1";
+  const draw = () => {
+    const v = rec.value, lp = live.ok && live.ok.prices[sym], price = lp || v.price_ref, pk = levelPick(v.zones, price), f = n => Number(Number(n).toPrecision(7));
+    const dist = z => ((z.mid - price) / price * 100);
+    const line = (title, z, k) => { const d = $("div", "lvl"); d.style.borderInlineStartColor = LV[k].c; d.style.borderInlineStartWidth = Math.min(LV[k].w, 5) + "px"; d.style.borderInlineStartStyle = LV[k].d ? (LV[k].d.length > 3 ? "dashed" : "dotted") : "solid"; d.append($("b", null, title + ": ")); d.firstChild.style.color = LV[k].c;
+      if (!z) { d.append("لا يوجد قريب ضمن 5%"); return d; }
+      const rg = z.lo === z.hi ? String(f(z.mid)) : f(z.lo) + " - " + f(z.hi), b = $("bdi", "val2", rg); b.dir = "ltr"; d.append(b);
+      d.append(" (" + (dist(z) >= 0 ? "+" : "") + dist(z).toFixed(2) + "%)");
+      d.append($("div", "src", "عينة: " + z.episodes + " لمسة سابقة، ارتد منها " + z.bounces + " | مصادر: " + z.why.slice(0, 3).join("، "))); return d; };
+    w.replaceChildren();
+    w.append($("div", "src", "السعر المرجعي: " + (lp ? "الحي " : "آخر شمعة ساعة ") + f(price)));
+    const its = []; const add = (k, z) => { if (z) its.push({k, lo: z.lo, hi: z.hi}); };
+    add("watch", pk.watch); add("res", pk.res1); add("resS", pk.resStrong); add("sup", pk.sup1); add("supS", pk.supStrong); add("bounce", pk.bounce);
+    if (v.forming) its.push({k: "form", lo: v.forming.zone_mid, hi: v.forming.zone_mid});
+    const ob0 = ob.ok && ob.ok.m[sym]; if (ob0) { if (ob0.bidWall) its.push({k: "wall", lo: ob0.bidWall.p, hi: ob0.bidWall.p}); if (ob0.askWall) its.push({k: "wall", lo: ob0.askWall.p, hi: ob0.askWall.p}); }
+    w.append(ladder(its, price, f), legendView());
+    if (pk.watch) w.append(line("رقم المراقبة (الأقرب للسعر)", pk.watch, "watch"));
+    w.append(line("أقرب مقاومة", pk.res1, "res")); if (pk.resStrong && pk.resStrong !== pk.res1) w.append(line("مقاومة أقوى (ضمن 5%)", pk.resStrong, "resS"));
+    w.append(line("أقرب دعم", pk.sup1, "sup")); if (pk.supStrong && pk.supStrong !== pk.sup1) w.append(line("دعم قوي (ضمن 5%)", pk.supStrong, "supS"));
+    w.append(line("منطقة ارتداد محتملة (أفضل نسبة ارتداد سابقة، 3 لمسات فأكثر)", pk.bounce, "bounce"));
+    const fm = v.forming; const fd = $("div", "lvl"); fd.style.borderInlineStartColor = LV.form.c; fd.style.borderInlineStartWidth = "3px"; fd.style.borderInlineStartStyle = "dashed"; fd.style.color = LV.form.c; fd.textContent = (fm ? "ارتداد يتشكل: " + (fm.side === "support" ? "السعر لمس منطقة دعم قرب " : "السعر لمس منطقة مقاومة قرب ") + f(fm.zone_mid) + " وأغلق بعيدا عنها في آخر 3 شموع ساعة (وصف لما حدث، ليس توقعا)" : "ارتداد يتشكل: لا يوجد الآن"); w.append(fd);
+    const o = ob.ok && ob.ok.m[sym];
+    if (o && (o.bidWall || o.askWall)) { const wl = (t, x) => x ? t + " " + f(x.p) + " (" + x.dist.toFixed(2) + "% بعيدا، " + x.x.toFixed(1) + " ضعف المعتاد)" : ""; w.append($("div", "src", "جدران أوامر حية (حي، قد تُلغى في أي لحظة): " + [wl("شراء", o.bidWall), wl("بيع", o.askWall)].filter(Boolean).join(" | "))); }
+    w.append($("div", "src", "فرضيات من الماضي: مستويات من بروفايل الحجم والقمم والقيعان، عدد اللمسات والارتداد عينات صغيرة، ولم تُختبر خارج العينة. ليست توقعا ولا نصيحة."));
+  };
+  draw(); const key = () => (live.ok ? live.ok.prices[sym] : "") + "|" + (ob.ok ? ob.ok.at : "");
+  let last = key(); const t = setInterval(() => { if (!w.isConnected) { clearInterval(t); return; } const k = key(); if (k !== last) { last = k; draw(); } }, 2000);
+  return w;
+}
+window.__levelPick = levelPick;
+
+function recCard(mod, rec, sym) {
   const c = $("div", "card");
   const ttl = rec.title_ar || (mod.view ? mod.view.title : rec.id);
   c.append($("h2", null, rec.id.indexOf("price.") === 0 ? ttl + " (لقطة محفوظة وليست حية)" : ttl));
@@ -115,6 +180,7 @@ function recCard(mod, rec) {
   else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
   else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
   else if (/^intent-size/.test(rec.unit) && rec.stats) c.append(intentSizeView(rec));
+  else if (rec.unit === "levels" && rec.value) c.append(levelsView(rec, sym));
   else if (/^xcheck/.test(rec.unit) && rec.stats) c.append(xcheckView(rec));
   else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
@@ -225,7 +291,9 @@ function obMetrics(raw) {
   const band = Math.max(Math.min(OB.maxBand, reach), 0);
   const bv = b.filter(x => x[0] >= mid * (1 - band / 100)).reduce((t, x) => t + x[1], 0);
   const av = a.filter(x => x[0] <= mid * (1 + band / 100)).reduce((t, x) => t + x[1], 0);
-  return {mid, spreadPct: (a[0][0] - b[0][0]) / mid * 100, band, bv, av, imb: bv + av > 0 ? (bv - av) / (bv + av) : 0};
+  const wallOf = (side, sgn) => { const q = side.map(x => x[1]).sort((x, y) => x - y), med = q[Math.floor(q.length / 2)] || 0; let best = null;
+    side.forEach(x => { const d = Math.abs(x[0] - mid) / mid * 100; if (d <= 1 && med > 0 && x[1] >= 4 * med && (!best || x[1] > best.q)) best = {p: x[0], q: x[1], dist: d, x: x[1] / med}; }); return best; };
+  return {mid, spreadPct: (a[0][0] - b[0][0]) / mid * 100, band, bv, av, imb: bv + av > 0 ? (bv - av) / (bv + av) : 0, bidWall: wallOf(b), askWall: wallOf(a)};
 }
 const ob = {ok: null, errs: {}};
 async function obPoll() {
@@ -295,6 +363,7 @@ async function main() {
   }
   const coinOf = r => { const x = /(xaut|bnb|eth|sol)usdt/.exec(r.id); return x ? x[1].toUpperCase() : null; };
   const SECS = [
+    ["levels", "المستويات المراقَبة (فرضيات)", r => /^levels\./.test(r.id)],
     ["price", "لقطة السعر والفحص", r => /^(price|change24h)\./.test(r.id)],
     ["kline", "الشموع", r => /^kline\./.test(r.id)],
     ["flow", "التدفق (دلتا المشترين والبائعين)", r => /^flow\./.test(r.id)],
@@ -304,7 +373,8 @@ async function main() {
   const find = (c, f) => all.filter(x => x.r && coinOf(x.r) === c && f(x.r));
   const fx = n => Number(Number(n).toPrecision(6)).toString();
   function oneLine(key, c) {
-    const L = {kline: () => { const x = find(c, r => /^kline\..*\.1h$/.test(r.id))[0]; return x ? "آخر إغلاق ساعة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
+    const L = {levels: () => { const x = find(c, r => /^levels\./.test(r.id))[0]; if (!x) return ""; const pk = levelPick(x.r.value.zones, x.r.value.price_ref), f = n => Number(Number(n).toPrecision(7)); return "أقرب دعم " + (pk.sup1 ? f(pk.sup1.mid) : "-") + " | أقرب مقاومة " + (pk.res1 ? f(pk.res1.mid) : "-"); },
+      kline: () => { const x = find(c, r => /^kline\..*\.1h$/.test(r.id))[0]; return x ? "آخر إغلاق ساعة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
       flow: () => { const x = find(c, r => /^flow\..*\.1h$/.test(r.id))[0]; return x ? "صافي آخر ساعة مغلقة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
       profile: () => { const x = find(c, r => /^profile\..*\.24h$/.test(r.id))[0]; return x ? "أكثر سعر تداولا 24 ساعة: " + fx(x.r.stats.poc) : ""; },
       intent: () => { const x = find(c, r => r.unit === "divergence")[0]; return x ? "تباعد السعر والدلتا: " + ({"no divergence": "لا يوجد", "price up while net taker flow is selling": "سعر صاعد وبيع صافٍ", "price down while net taker flow is buying": "سعر هابط وشراء صافٍ"}[x.r.value.state] || "") : ""; },
@@ -329,10 +399,11 @@ async function main() {
     main.replaceChildren(); curSym = coins.includes(t) ? t : null;
     if (meta.manifest_errors.length) main.append($("div", "card", "أخطاء في تعريف الوحدات: " + meta.manifest_errors.join("؛ ")));
     if (curSym) {
-      main.append(headFor(t), LIVEBOX, OBBOX); renderLive(); renderOb();
+      main.append(headFor(t));
       for (const [key, title, f] of SECS) {
         const items = find(t, f); if (!items.length) continue;
-        main.append(section(title, oneLine(key, t), items.map(x => recCard(x.m, x.r)), key === "price"));
+        if (key === "price") { main.append(LIVEBOX, OBBOX); renderLive(); renderOb(); }
+        main.append(section(title, oneLine(key, t), items.map(x => recCard(x.m, x.r, t)), key === "levels" || key === "price"));
       }
       main.append(placeholder("التوصية والمنطقة وإبطال الفكرة", "ستظهر هنا: الموقف (شراء/بيع/انتظار) مع الأسباب (الأخبار أولا ثم المستويات والتدفق وبروفايل الحجم والمؤشرات)، منطقة الدخول، مستوى إبطال الفكرة، المخاطرة، وخطط أ/ب/ج. لم تُبنَ بعد."));
       main.append(placeholder("الاختبارات الرجعية والوكيل التجريبي", "لا اختبارات رجعية بعد (مرحلة R1) ولا نتائج من الوكيل التجريبي. لن يُعرض أي رقم نجاح قبل اختباره خارج العينة بعدد صفقات وفترة ثقة."));

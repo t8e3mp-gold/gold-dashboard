@@ -38,7 +38,7 @@ ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.
 ok(!X.overflow, "no horizontal overflow at 390px in any tab (all sections open)");
 ok(X.wrap, "timestamps do not wrap");
 ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
-ok(cards.length >= 39, "all 39 cards are reachable through the tabs (" + cards.length + ")");
+ok(cards.length >= 43, "all 43 cards are reachable through the tabs (" + cards.length + ")");
 ok(await p.$$eval("nav button", bs => bs.map(b => b.innerText).join(",") === "XAUT,ETH,SOL,BNB,النظام"), "tab row: XAUT, ETH, SOL, BNB, then system");
 const pc = cards.filter(t => t.startsWith("سعر "));
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
@@ -137,4 +137,15 @@ async function obCase(o) {
 { const { txt } = await obCase({ binance: "451" }); ok(txt.includes("أو كي إكس") && txt.includes("بديل"), "order book: falls back to OKX"); }
 { const { txt } = await obCase({ binance: "451", okx: "fail" }); ok(txt.includes("جيت"), "order book: falls back to Gate.io"); }
 { const { txt } = await obCase({ crossed: true, okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "order book: crossed or failed books are rejected with a clear warning"); }
+// levels: hand-computed pick + distinct styles + legend (added with the levels feature)
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 } }); const q = await ctx.newPage(); await q.goto(base); await q.waitForSelector(".card");
+  const r = await q.evaluate(() => typeof window.__levelPick);
+  ok(r === "function", "levelPick exposed");
+  const txt = await q.evaluate(() => document.body.innerText);
+  ok(/المستويات/.test(txt), "levels section present");
+  const n = await q.evaluate(() => document.querySelectorAll(".legend .lgi").length);
+  ok(n === 9, "legend shows 9 distinct level styles (" + n + ")");
+  const sty = await q.evaluate(() => new Set([...document.querySelectorAll(".ladder line")].map(l => l.getAttribute("stroke") + "|" + l.getAttribute("stroke-dasharray") + "|" + l.getAttribute("stroke-width"))).size);
+  ok(sty >= 4, "ladder lines use several distinct color/dash styles (" + sty + ")");
+  await ctx.close(); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

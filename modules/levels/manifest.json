@@ -1,0 +1,17 @@
+{
+  "id": "levels",
+  "name_ar": "المستويات: مقاومة ودعم ومناطق ارتداد (فرضيات) من الشموع وبروفايل الحجم",
+  "name_en": "Levels (hypotheses)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["klines", "volume-profile"],
+  "outputs": [{"id": "levels", "schema": "schema/levels.schema.json"}],
+  "label": "hypothesis",
+  "source": {"name": "klines and volume-profile modules (Binance public data)", "url": "https://data-api.binance.vision/api/v3/klines"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 60,
+  "view": {"tab": "modules", "title": "المستويات", "type": "table"}
+}

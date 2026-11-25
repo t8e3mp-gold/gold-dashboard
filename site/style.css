@@ -29,3 +29,7 @@ footer .refresh:active{background:var(--gold);color:#000}
 details.sec{margin:10px 0}details.sec>summary{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;color:var(--gold);cursor:pointer;list-style:none}
 details.sec>summary::-webkit-details-marker{display:none}details.sec[open]>summary{border-color:var(--gold)}.sline{color:var(--mut);font-size:.8rem}
 nav{position:sticky;top:0;z-index:5;background:#000;border-bottom:1px solid var(--line)}
+.lvl{padding:6px 0;border-bottom:1px solid #2a2a2a;font-size:.95rem}.lvl b{color:var(--gold)}.val2{color:#fff}
+.lvl{border-inline-start:3px solid var(--line);padding-inline-start:8px;margin:6px 0}
+.ladder{width:100%;display:block;background:#0a0a0a;border:1px solid var(--line);border-radius:8px;margin:8px 0}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin:4px 0 8px;font-size:.72rem;color:var(--mut)}.lgi{display:inline-flex;align-items:center;gap:4px}.lvs{display:inline-block}
