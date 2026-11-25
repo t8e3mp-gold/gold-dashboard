@@ -14,3 +14,4 @@ nav button.on{background:var(--gold);color:#000}
 .p-ok{background:var(--ok)}.p-bad{background:var(--bad)}.p-warn{background:var(--warn)}.p-lbl{background:#444}
 .src{font-size:.78rem;color:var(--mut)}
 .src a{color:var(--mut)}
+bdi{white-space:nowrap}
