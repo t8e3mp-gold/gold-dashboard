@@ -6,6 +6,7 @@ import { Radar } from './radar';
 import { Signal } from './signal';
 import { Research } from './research';
 import { Studio } from './studio';
+import { Trust } from './trust';
 import { TVNote, History, Journal, Ideas, Rules, Paper, Lab } from './pages';
 const API = 'https://data-api.binance.vision/api/v3/klines';
 const ASSETS = [
@@ -261,7 +262,7 @@ export function App() {
         <nav className="gd-tabs" aria-label="الصفحات">
             <NavLink to="/" end>الرئيسية</NavLink>
             {ASSETS.map(a => <NavLink key={a.path} to={`/${a.path}`}>{a.name.split(' ')[0] === 'الذهب' ? 'الذهب' : a.name}</NavLink>)}
-            <NavLink to="/radar">الأخبار</NavLink><NavLink to="/journal">السجل</NavLink><NavLink to="/lab">المعمل</NavLink><NavLink to="/paper">التداول</NavLink><NavLink to="/studio">المحلل</NavLink><NavLink to="/research">المخزن</NavLink><NavLink to="/ideas">الأفكار</NavLink><NavLink to="/rules">القواعد</NavLink>
+            <NavLink to="/radar">الأخبار</NavLink><NavLink to="/journal">السجل</NavLink><NavLink to="/lab">المعمل</NavLink><NavLink to="/paper">التداول</NavLink><NavLink to="/studio">المحلل</NavLink><NavLink to="/trust">التحقق</NavLink><NavLink to="/research">المخزن</NavLink><NavLink to="/ideas">الأفكار</NavLink><NavLink to="/rules">القواعد</NavLink>
         </nav>
         <Routes>
             <Route path="/" element={<>{head}{refresh}{data && home}</>} />
@@ -272,9 +273,10 @@ export function App() {
             <Route path="/paper" element={<Paper />} />
             <Route path="/research" element={<Research />} />
             <Route path="/studio" element={<Studio />} />
+            <Route path="/trust" element={<Trust />} />
             <Route path="/lab" element={<Lab />} />
             {ASSETS.map(a => <Route key={a.path} path={`/${a.path}`} element={data ? coin(data.find(d => d.sym === a.sym)!, rr, setRr) : <Header title={a.name} fact="جار التحميل" />} />)}
         </Routes>
         {closing}
     </FileCard>;
-                                                                                                                                              }
+}
