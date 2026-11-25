@@ -4,6 +4,23 @@ from datetime import datetime, timezone
 
 LABELS = ["measured", "simulated", "live", "hypothesis", "ai"]
 
+KNOWN = {"type", "required", "properties", "items", "enum", "pattern", "minimum", "minItems",
+         "description", "title", "$schema", "$id"}
+
+def lint_schema(s, path="$"):
+    """Reject schema keywords this validator would silently ignore."""
+    errs = []
+    if not isinstance(s, dict):
+        return [f"{path}: schema must be an object"]
+    for k in s:
+        if k not in KNOWN:
+            errs.append(f"{path}: unsupported keyword '{k}'")
+    for k, sub in s.get("properties", {}).items():
+        errs += lint_schema(sub, f"{path}.properties.{k}")
+    if "items" in s:
+        errs += lint_schema(s["items"], f"{path}.items")
+    return errs
+
 def _type_ok(v, t):
     return {"object": isinstance(v, dict), "array": isinstance(v, list),
             "string": isinstance(v, str), "boolean": isinstance(v, bool),
