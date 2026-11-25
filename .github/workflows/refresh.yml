@@ -10,16 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: {ref: main}
       - uses: actions/setup-python@v5
         with: {python-version: "3.12"}
       - name: Tests first
         run: python -m unittest discover -s tests
-      - name: Run modules (validated; invalid output is never published)
+      - name: Run modules (invalid output is never published; one failure does not block the others)
+        id: run
+        continue-on-error: true
         run: python pipeline/runner.py
+      - name: Scan new data for secrets and personal data
+        run: python tools/scan.py data
       - name: Commit changed data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data
           git diff --cached --quiet || git commit -m "Data refresh $(date -u +%F)"
+          git pull --rebase origin main
           git push
+      - name: Fail the run if any module failed
+        if: steps.run.outcome == 'failure'
+        run: |
+          echo "::error::at least one module failed, see 'Run modules' step; other modules were published"
+          exit 1
