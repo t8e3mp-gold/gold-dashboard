@@ -35,6 +35,13 @@ async function main() {
   const meta = await getJSON("data/meta.json");
   const g = ageH(meta.generated_at);
   document.getElementById("gen").textContent = "آخر تحديث للبيانات: \u2066" + meta.generated_at + "\u2069 (قبل " + g.toFixed(1) + " ساعة)" + (g > 26 ? " تحذير: البيانات قديمة" : "");
+  const bad = Object.entries(meta.modules).filter(([, m]) => m.status !== "ok").map(([id]) => id);
+  const msgs = [];
+  if (g > 26) msgs.push("البيانات قديمة: آخر تحديث قبل " + g.toFixed(0) + " ساعة (الحد 26 ساعة)");
+  if (bad.length) msgs.push("وحدات بها مشكلة: " + bad.join("، "));
+  if (meta.manifest_errors.length) msgs.push("أخطاء في تعريف الوحدات");
+  const bn = document.getElementById("banner");
+  if (msgs.length) { bn.textContent = msgs.join(" | "); bn.hidden = false; }
   const tabs = {};
   for (const [id, m] of Object.entries(meta.modules)) { const t = (m.view && m.view.tab) || "modules"; (tabs[t] = tabs[t] || []).push([id, m]); }
   const nav = document.getElementById("tabs"), main = document.getElementById("main");
