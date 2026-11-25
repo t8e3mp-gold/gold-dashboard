@@ -66,6 +66,16 @@ class Runner(unittest.TestCase):
         meta = json.load(open(os.path.join(dd, "meta.json")))
         self.assertEqual(meta["modules"]["bad"]["status"], "failed")
         self.assertEqual(meta["modules"]["good"]["status"], "ok")
+    def test_module_may_read_its_own_previous_output(self):
+        d = self.mk({"self": (["self"], "self", self.ok("self"))})
+        dd = os.path.join(d, "data"); os.makedirs(dd)
+        self.assertEqual(runner.main(d, dd), 0)                     # first run: no previous output, still fine
+        self.assertEqual(runner.main(d, dd), 0)                     # second run: previous output is copied in
+        self.assertEqual(json.load(open(os.path.join(dd, "meta.json")))["modules"]["self"]["status"], "ok")
+    def test_missing_foreign_input_still_fails(self):
+        d = self.mk({"x": (["nothere"], "x", self.ok("x"))})
+        dd = os.path.join(d, "data"); os.makedirs(dd)
+        self.assertEqual(runner.main(d, dd), 1)
     def test_meta_carries_shell_version(self):
         d = self.mk({"good": ([], "good", self.ok("good"))})
         os.makedirs(os.path.join(d, "site")); open(os.path.join(d, "site", "app.js"), "w").write("const APP_VERSION = 7;\n")

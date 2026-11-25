@@ -1,0 +1,17 @@
+{
+  "id": "crosscheck-log",
+  "name_ar": "سجل الفروقات الحقيقية بين المصادر (يثبت أن الفحص يعمل)",
+  "name_en": "Cross-check log",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["price-spot", "klines", "flow", "volume-profile", "crosscheck-log"],
+  "outputs": [{"id": "crosscheck-log", "schema": "schema/crosscheck-log.schema.json"}],
+  "label": "measured",
+  "source": {"name": "Cross-check results of the other modules (price-spot, klines, flow, volume-profile)", "url": "https://github.com/t8e3mp-gold/gold-dashboard/tree/main/data"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 60,
+  "view": {"tab": "modules", "title": "سجل الفحص", "type": "table"}
+}

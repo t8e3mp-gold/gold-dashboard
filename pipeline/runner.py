@@ -114,6 +114,8 @@ def run_module(m, data_dir, root=ROOT, now=None):
         for i in m["inputs"]:
             src = os.path.join(data_dir, i + ".json")
             if not os.path.exists(src):
+                if i in {o["id"] for o in m["outputs"]}:
+                    continue          # a module may read its own previous output (first run has none)
                 return "failed", f"missing input '{i}'"
             shutil.copy(src, os.path.join(sdata, i + ".json"))
         sdir = os.path.join(box, "module"); shutil.copytree(mdir, sdir)

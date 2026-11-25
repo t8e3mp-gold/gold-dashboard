@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 12; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 13; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -12,7 +12,7 @@ const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
 const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
 function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
 function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
-const arSrc = t => String(t).replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
+const arSrc = t => String(t).replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -97,6 +97,15 @@ function intentDivView(rec) {
   return w;
 }
 
+function xcheckView(rec) {
+  const st = rec.stats, w = $("div"), G = {price: "الأسعار", kline: "الشموع", flow: "التدفق", profile: "بروفايل الحجم", other: "أخرى"};
+  w.append($("div", "val", "فحوصات مسجلة: " + st.checks_total + " | إنذارات: " + st.flagged_total));
+  w.append($("div", "src", "عدد مرات التحديث المسجلة: " + st.runs + " (نحتفظ بآخر " + st.kept + ")"));
+  Object.entries(st.groups).forEach(([k, g]) => w.append($("div", "src", (G[k] || k) + ": " + g.checks + " فحص | أكبر فرق حقيقي " + g.max_diff_pct + "% | متوسط " + g.mean_diff_pct + "% | إنذارات " + g.flagged)));
+  w.append($("div", "src", "الغرض: التفريق بين فحص هادئ (فروق صغيرة دائما) وفحص ميت (لا يسجل شيئا). الإنذار يظهر عندما يتجاوز الفرق حد الفحص."));
+  return w;
+}
+
 function recCard(mod, rec) {
   const c = $("div", "card");
   const ttl = rec.title_ar || (mod.view ? mod.view.title : rec.id);
@@ -106,6 +115,7 @@ function recCard(mod, rec) {
   else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
   else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
   else if (/^intent-size/.test(rec.unit) && rec.stats) c.append(intentSizeView(rec));
+  else if (/^xcheck/.test(rec.unit) && rec.stats) c.append(xcheckView(rec));
   else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
