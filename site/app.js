@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 13; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 14; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -152,6 +152,8 @@ const LSRC = {
 };
 const validPrices = o => LIVE.syms.every(s => Number.isFinite(o[s]) && o[s] > 0);
 const live = {n: 0, ok: null, errs: {}};
+let LIVEBOX = null, OBBOX = null, curSym = null;
+const symsShown = () => LIVE.syms.filter(x => !curSym || x === curSym);
 async function livePoll() {
   live.n++;
   let prim = null, name = null; live.errs = {};
@@ -170,12 +172,13 @@ async function livePoll() {
   }
   renderLive();
 }
+function updateHead() { if (window.__updateHead) window.__updateHead(); }
 function renderLive() {
-  const box = document.getElementById("live"); if (!box) return;
+  const box = LIVEBOX; if (!box) return; updateHead();
   box.replaceChildren(); box.append($("h2", null, "الأسعار الحية (من المتصفح مباشرة)"));
   const l = live.ok, age = l ? (performance.now() - l.t0) / 1000 : null, stale = !l || age > LIVE.staleSec;
   if (!l) { box.append($("div", "src", "تحذير: تعذّر جلب الأسعار الحية من كل المصادر: " + Object.entries(live.errs).map(([k, v]) => arSrc(k) + " " + arSrc(v)).join("، "))); return; }
-  for (const s of LIVE.syms) {
+  for (const s of symsShown()) {
     const row = $("div", "lrow"); row.append($("span", "lsym", s));
     const v = $("bdi", "val", String(l.prices[s])); v.dir = "ltr"; row.append(v);
     if (l.chk) { const d = Math.abs(l.prices[s] - l.chk.o[s]) / l.chk.o[s] * 100, okc = d <= LIVE.maxDiff;
@@ -192,7 +195,7 @@ function renderLive() {
   box.append(f);
 }
 function startLive(main) {
-  const box = $("section", "live"); box.id = "live"; main.parentNode.insertBefore(box, main);
+  const box = $("section", "live"); box.id = "live"; LIVEBOX = box;
   renderLive();
   let timer = null;
   const tick = async () => { if (document.hidden || !navigator.onLine) { renderLive(); return; } try { await livePoll(); } catch (e) { /* shown as stale */ } };
@@ -237,11 +240,11 @@ async function obPoll() {
   renderOb();
 }
 function renderOb() {
-  const box = document.getElementById("obook"); if (!box) return;
+  const box = OBBOX; if (!box) return;
   box.replaceChildren(); box.append($("h2", null, "دفتر الأوامر الحي (من المتصفح مباشرة)"));
   const o = ob.ok, age = o ? (performance.now() - o.t0) / 1000 : null, stale = !o || age > OB.staleSec;
   if (!o) { box.append($("div", "src", "تحذير: تعذّر جلب دفتر الأوامر من كل المصادر: " + Object.entries(ob.errs).map(([k, v]) => arSrc(k) + " " + arSrc(v)).join("، "))); return; }
-  for (const s of LIVE.syms) {
+  for (const s of symsShown()) {
     const m = o.m[s], row = $("div", "lrow"); row.append($("span", "lsym", s));
     const pct = Math.round((m.imb + 1) / 2 * 100), bar = $("span", "obbar"), g = $("i", "obg"), r = $("i", "obr");
     g.style.width = pct + "%"; r.style.width = (100 - pct) + "%"; bar.append(g, r); row.append(bar);
@@ -258,7 +261,7 @@ function renderOb() {
   box.append($("div", "src", "النسبة المئوية بجوار الشريط هي اختلال الشراء/البيع. عرض النطاق يختلف من عملة لأخرى (مثلا ETH أضيق بكثير)، فلا تقارن الأشرطة بين العملات. لقطة لحظية لأول 100 مستوى فقط، أخضر = أوامر شراء واقفة أكثر، أحمر = أوامر بيع أكثر. الأوامر الواقفة قد تُلغى أو تكون وهمية، ولا تدل على نية. لا يُحفظ لها تاريخ ولا تدخل في أي اختبار رجعي."));
 }
 function startOb(anchor) {
-  const box = $("section", "live"); box.id = "obook"; anchor.after(box); renderOb();
+  const box = $("section", "live"); box.id = "obook"; OBBOX = box; renderOb();
   let timer = null; const tick = async () => { if (document.hidden || !navigator.onLine) { renderOb(); return; } try { await obPoll(); } catch (e) { /* shown as stale */ } };
   const loop = () => { clearInterval(timer); tick(); timer = setInterval(tick, OB.pollMs); };
   document.addEventListener("visibilitychange", () => { if (!document.hidden) loop(); }); window.addEventListener("online", loop);
@@ -279,25 +282,71 @@ async function main() {
   const bn = document.getElementById("banner");
   if (offline) msgs.unshift("غير متصل: عرض آخر نسخة محفوظة، والأعمار تقريبية");
   if (msgs.length) { bn.textContent = msgs.join(" | "); bn.hidden = false; }
-  const tabs = {};
-  for (const [id, m] of Object.entries(meta.modules)) { const t = (m.view && m.view.tab) || "modules"; (tabs[t] = tabs[t] || []).push([id, m]); }
   const nav = document.getElementById("tabs"), main = document.getElementById("main");
   startLive(main);
-  startOb(document.getElementById("live"));
-  const names = {modules: "الوحدات"};
-  async function show(t) {
-    [...nav.children].forEach(b => b.classList.toggle("on", b.dataset.t === t));
-    main.replaceChildren();
-    if (meta.manifest_errors.length) main.append($("div", "card", "أخطاء في تعريف الوحدات: " + meta.manifest_errors.join("؛ ")));
-    for (const [id, m] of tabs[t]) {
-      for (const o of m.outputs) {
-        try { const d = await getJSON("data/" + o + ".json"); d.records.forEach(r => main.append(recCard(m, r))); }
-        catch (e) { main.append($("div", "card", "تعذّر تحميل " + o)); }
-      }
+  startOb(null);
+  // Load every output once, then group the records by coin (display only; no values are changed).
+  const all = [];
+  for (const [id, m] of Object.entries(meta.modules)) {
+    for (const o of m.outputs) {
+      try { const d = await getJSON("data/" + o + ".json"); d.records.forEach(r => all.push({m, r})); }
+      catch (e) { all.push({m, err: o}); }
     }
   }
-  Object.keys(tabs).forEach(t => { const b = $("button", null, names[t] || t); b.dataset.t = t; b.onclick = () => show(t); nav.append(b); });
-  show(Object.keys(tabs)[0]);
+  const coinOf = r => { const x = /(xaut|bnb|eth|sol)usdt/.exec(r.id); return x ? x[1].toUpperCase() : null; };
+  const SECS = [
+    ["price", "لقطة السعر والفحص", r => /^(price|change24h)\./.test(r.id)],
+    ["kline", "الشموع", r => /^kline\./.test(r.id)],
+    ["flow", "التدفق (دلتا المشترين والبائعين)", r => /^flow\./.test(r.id)],
+    ["profile", "بروفايل الحجم", r => /^profile\./.test(r.id)],
+    ["intent", "مؤشرات النية (فرضيات)", r => /^intent\./.test(r.id)],
+  ];
+  const find = (c, f) => all.filter(x => x.r && coinOf(x.r) === c && f(x.r));
+  const fx = n => Number(Number(n).toPrecision(6)).toString();
+  function oneLine(key, c) {
+    const L = {kline: () => { const x = find(c, r => /^kline\..*\.1h$/.test(r.id))[0]; return x ? "آخر إغلاق ساعة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
+      flow: () => { const x = find(c, r => /^flow\..*\.1h$/.test(r.id))[0]; return x ? "صافي آخر ساعة مغلقة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
+      profile: () => { const x = find(c, r => /^profile\..*\.24h$/.test(r.id))[0]; return x ? "أكثر سعر تداولا 24 ساعة: " + fx(x.r.stats.poc) : ""; },
+      intent: () => { const x = find(c, r => r.unit === "divergence")[0]; return x ? "تباعد السعر والدلتا: " + ({"no divergence": "لا يوجد", "price up while net taker flow is selling": "سعر صاعد وبيع صافٍ", "price down while net taker flow is buying": "سعر هابط وشراء صافٍ"}[x.r.value.state] || "") : ""; },
+      price: () => { const x = find(c, r => /^price\./.test(r.id))[0]; return x ? "آخر لقطة: " + fx(x.r.value) : ""; }};
+    return L[key] ? L[key]() : "";
+  }
+  function section(title, line, body, open) { const d = $("details", "sec"); if (open) d.open = true; const sm = $("summary", null, title); if (line) sm.append($("span", "sline", " | " + line)); d.append(sm); body.forEach(x => d.append(x)); return d; }
+  const placeholder = (t, m) => { const d = $("div", "head"); d.append($("div", "src", m)); return section(t, "لم يُبنَ بعد", [d], false); };
+  const coins = ["XAUT", "ETH", "SOL", "BNB"], modOk = Object.values(meta.modules).filter(m => m.status === "ok").length, modAll = Object.keys(meta.modules).length;
+  function headFor(c) {
+    const h = $("div", "head"); h.append($("h2", null, c + " / USDT"));
+    const hp = $("div"); hp.append("السعر الحي: "); const v = $("bdi", "val", "..."); v.id = "headprice"; v.dir = "ltr"; hp.append(v); h.append(hp);
+    const st = $("div"); st.append("التوصية: ", $("span", "pill p-warn", "انتظر"), $("span", "pill p-lbl", "فرضية")); h.append(st);
+    h.append($("div", "src", "لا توصية فعلية بعد: وحدة التوصية لم تُبنَ، ولم تُختبر أي قاعدة خارج العينة. الافتراضي هو الانتظار."));
+    h.append($("div", "src", "حالة النظام: " + modOk + " من " + modAll + " وحدات سليمة | عمر البيانات المحفوظة " + ageH(meta.generated_at).toFixed(1) + " ساعة"));
+    return h;
+  }
+  function updateHeadImpl() { const v = document.getElementById("headprice"); if (!v) return; const l = live.ok; v.textContent = l && curSym && l.prices[curSym] != null ? String(l.prices[curSym]) : "..."; }
+  window.__updateHead = updateHeadImpl;
+  async function show(t) {
+    [...nav.children].forEach(b => b.classList.toggle("on", b.dataset.t === t));
+    main.replaceChildren(); curSym = coins.includes(t) ? t : null;
+    if (meta.manifest_errors.length) main.append($("div", "card", "أخطاء في تعريف الوحدات: " + meta.manifest_errors.join("؛ ")));
+    if (curSym) {
+      main.append(headFor(t), LIVEBOX, OBBOX); renderLive(); renderOb();
+      for (const [key, title, f] of SECS) {
+        const items = find(t, f); if (!items.length) continue;
+        main.append(section(title, oneLine(key, t), items.map(x => recCard(x.m, x.r)), key === "price"));
+      }
+      main.append(placeholder("التوصية والمنطقة وإبطال الفكرة", "ستظهر هنا: الموقف (شراء/بيع/انتظار) مع الأسباب (الأخبار أولا ثم المستويات والتدفق وبروفايل الحجم والمؤشرات)، منطقة الدخول، مستوى إبطال الفكرة، المخاطرة، وخطط أ/ب/ج. لم تُبنَ بعد."));
+      main.append(placeholder("الاختبارات الرجعية والوكيل التجريبي", "لا اختبارات رجعية بعد (مرحلة R1) ولا نتائج من الوكيل التجريبي. لن يُعرض أي رقم نجاح قبل اختباره خارج العينة بعدد صفقات وفترة ثقة."));
+    } else {
+      const h = $("div", "head"); h.append($("h2", null, "حالة النظام"));
+      h.append($("div", "src", "آخر تحديث للبيانات: ")); h.lastChild.append(timeEl(Date.parse(meta.generated_at)));
+      h.append($("div", "src", "الوحدات السليمة: " + modOk + " من " + modAll + " | عمر البيانات: " + ageH(meta.generated_at).toFixed(1) + " ساعة"));
+      for (const [id, m] of Object.entries(meta.modules)) { const r = $("div", "src"); r.append(m.name_ar + ": "); r.append($("span", "pill " + (m.status === "ok" ? "p-ok" : "p-bad"), m.status === "ok" ? "سليمة" : m.status === "stale" ? "قديمة" : "فشلت")); if (m.last_ok) { r.append(" آخر نجاح: "); r.append(timeEl(Date.parse(m.last_ok))); } h.append(r); }
+      main.append(h);
+      all.filter(x => !x.r || !coinOf(x.r)).forEach(x => main.append(x.r ? recCard(x.m, x.r) : $("div", "card", "تعذّر تحميل " + x.err)));
+    }
+  }
+  [...coins, "system"].forEach(t => { const b = $("button", null, t === "system" ? "النظام" : t); b.dataset.t = t; b.onclick = () => show(t); nav.append(b); });
+  show("XAUT");
 }
 main().catch(e => { document.getElementById("gen").textContent = "تعذّر تحميل البيانات: " + e.message; });
 

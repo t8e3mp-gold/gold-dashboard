@@ -15,27 +15,49 @@ async function load(mutate) {
 }
 // 1. fresh data: every card shows source, time, label, status; no overflow; timestamp not wrapped
 let p = await load(null);
-const cards = await p.$$eval(".card", cs => cs.map(c => c.innerText));
+// open every section of every tab and collect what is on screen
+async function collect(p) {
+  const cards = [], x = { spark: 0, flowbars: 0, vprofile: 0, wrap: true, overflow: false, flowRects: [], profRects: [], sparkOk: true, secs: {}, heads: [] };
+  for (const t of ["XAUT", "ETH", "SOL", "BNB", "system"]) {
+    await p.click('nav button[data-t="' + t + '"]'); await p.waitForTimeout(150);
+    await p.$$eval("details.sec", ds => ds.forEach(d => { d.open = true; }));
+    cards.push(...await p.$$eval(".card", cs => cs.map(c => c.innerText)));
+    x.spark += await p.$$eval(".spark:not(.flowbars):not(.vprofile)", e => e.length);
+    x.sparkOk = x.sparkOk && await p.$$eval(".spark:not(.flowbars):not(.vprofile)", e => e.every(s => s.querySelector("polyline").getAttribute("points").length > 100));
+    x.flowbars += await p.$$eval(".flowbars", e => e.length); x.vprofile += await p.$$eval(".vprofile", e => e.length);
+    x.flowRects.push(...await p.$$eval(".flowbars", e => e.map(s => s.querySelectorAll("rect").length))); x.profRects.push(...await p.$$eval(".vprofile", e => e.map(s => s.querySelectorAll("rect").length)));
+    x.wrap = x.wrap && await p.$$eval(".src bdi", bs => bs.every(b => b.getClientRects().length === 1));
+    x.overflow = x.overflow || !(await p.$eval("body", e => e.scrollWidth <= window.innerWidth));
+    x.secs[t] = await p.$$eval("details.sec > summary", e => e.map(s => s.innerText)); x.heads.push(await p.$$eval(".head", e => e.map(h => h.innerText)));
+  }
+  return { cards, x };
+}
+const { cards, x: X } = await collect(p);
 ok(cards.length > 0, "cards rendered (" + cards.length + ")");
 ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.includes("العمر") && /مقاس|محاكاة|حي|فرضية|ذكاء اصطناعي/.test(t) && /محدّثة|قديمة/.test(t)), "every card has source, time, age, label and status");
-ok(await p.$eval("body", e => e.scrollWidth <= window.innerWidth), "no horizontal overflow at 390px");
-ok(await p.$$eval(".src bdi", bs => bs.every(x => x.getClientRects().length === 1)), "timestamps do not wrap");
+ok(!X.overflow, "no horizontal overflow at 390px in any tab (all sections open)");
+ok(X.wrap, "timestamps do not wrap");
 ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
-await p.waitForFunction(() => document.querySelectorAll(".card").length >= 39, null, { timeout: 15000 });
-const pc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.startsWith("سعر "));
+ok(cards.length >= 39, "all 39 cards are reachable through the tabs (" + cards.length + ")");
+ok(await p.$$eval("nav button", bs => bs.map(b => b.innerText).join(",") === "XAUT,ETH,SOL,BNB,النظام"), "tab row: XAUT, ETH, SOL, BNB, then system");
+const pc = cards.filter(t => t.startsWith("سعر "));
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
-const kc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.startsWith("شموع"));
+const kc = cards.filter(t => t.startsWith("شموع"));
 ok(kc.length === 8 && kc.every(t => t.includes("آخر إغلاق") && t.includes("الفرق الوسيط")), "8 candle cards, each with last close and cross-check");
-ok(await p.$$eval(".spark:not(.flowbars):not(.vprofile)", e => e.length === 8 && e.every(x => x.querySelector("polyline").getAttribute("points").length > 100)), "8 sparklines drawn");
-const fc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.startsWith("تدفق"));
+ok(X.spark === 8 && X.sparkOk, "8 sparklines drawn");
+const fc = cards.filter(t => t.startsWith("تدفق"));
 ok(fc.length === 8 && fc.every(t => t.includes("الصافي") && t.includes("نسبة الشراء") && (t.includes("الفرق") || t.includes("بلا مطابقة"))), "8 flow cards: net delta, buy share, and a check or a no-check warning");
-ok(await p.$$eval(".flowbars", e => e.length === 8 && e.every(x => x.querySelectorAll("rect").length === 48)), "8 delta bar charts of 48 bars");
-const vc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.startsWith("بروفايل الحجم"));
+ok(X.flowbars === 8 && X.flowRects.every(n => n === 48), "8 delta bar charts of 48 bars");
+const vc = cards.filter(t => t.startsWith("بروفايل الحجم"));
 ok(vc.length === 8 && vc.every(t => t.includes("أكثر سعر تداولا") && t.includes("منطقة القيمة") && t.includes("تقدير")), "8 volume-profile cards: POC, value area, estimate disclaimer");
-ok(await p.$$eval(".vprofile", e => e.length === 8 && e.every(x => x.querySelectorAll("rect").length === 60)), "8 profile charts of 60 bins");
+ok(X.vprofile === 8 && X.profRects.every(n => n === 60), "8 profile charts of 60 bins");
 ok(pc.every(t => t.includes("لقطة محفوظة وليست حية")), "price cards are labelled as saved snapshots, not live");
 ok(fc.every(t => t.includes("الساعة الجارية غير محسوبة")), "flow cards say the open hour is not counted");
-{ const all = (await p.$$eval(".card .src", e => e.map(x => x.innerText.replace(/XAUT|BNB|ETH|SOL|USDT|UTC|\d|https?:\S+/g, "")))).join(" "); const m = all.match(/[A-Za-z]{3,}/g); ok(!m, "no Latin words left in card source lines" + (m ? ": " + [...new Set(m)].slice(0, 8).join(",") : "")); }
+ok(["XAUT", "ETH", "SOL", "BNB"].every(c => ["لقطة السعر", "الشموع", "التدفق", "بروفايل الحجم", "مؤشرات النية", "التوصية", "الاختبارات"].every(k => X.secs[c].some(s => s.includes(k)))), "each coin tab has price, candles, flow, profile, intent, recommendation and tests sections");
+ok(X.heads[0].some(h => h.includes("XAUT") && h.includes("انتظر") && h.includes("السعر الحي")), "XAUT header shows price slot and stance (wait)");
+ok(X.heads[4].some(h => h.includes("حالة النظام")) && cards.some(t => t.includes("سجل")), "system tab shows status and the cross-check log");
+{ const all = cards.join(" ").split("\n").filter(l => l.includes("المصدر")).join(" ").replace(/XAUT|BNB|ETH|SOL|USDT|UTC|\d|https?:\S+/g, ""); const m = all.match(/[A-Za-z]{3,}/g); ok(!m, "no Latin words left in card source lines" + (m ? ": " + [...new Set(m)].slice(0, 8).join(",") : "")); }
+await p.click('nav button[data-t="XAUT"]'); await p.waitForTimeout(300);
 await p.screenshot({ path: "/tmp/ui-fresh.png" });
 // 2. forced stale data: banner and stale badge appear
 p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });
@@ -43,6 +65,7 @@ ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("قديمة")
 // 3. forced failed module: banner and warning on card
 p = await load(j => { for (const m of Object.values(j.modules)) { m.status = "failed"; m.detail = "test"; } });
 ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("مشكلة")), "banner shows when a module failed");
+await p.$$eval("details.sec", ds => ds.forEach(d => { d.open = true; }));
 ok((await p.$$eval(".card", cs => cs.map(c => c.innerText))).every(t => t.includes("تحذير")), "failed module warning on card");
 await p.screenshot({ path: "/tmp/ui-failed.png" });
 // 3b. data built for a newer page than the one loaded: tell the user to reload
@@ -65,6 +88,7 @@ ok(await p.$eval("#banner", e => e.hidden), "no new-version banner when versions
   await ctx.setOffline(true); await q.reload(); await q.waitForSelector(".card", { timeout: 8000 });
   ok(await q.$eval("#banner", e => !e.hidden && e.innerText.includes("غير متصل")), "offline: cards still shown with an offline banner");
   await q.screenshot({ path: "/tmp/ui-offline.png" }); }
+async function tabsText(q, sel) { const out = []; for (const t of ["XAUT", "ETH", "SOL", "BNB"]) { await q.click('nav button[data-t="' + t + '"]'); await q.waitForTimeout(200); out.push(await q.$eval(sel, e => e.innerText)); } return out.join("\n"); }
 // 6. live prices (browser-side): mocked exchanges
 const BASE = { XAUT: 4000, BNB: 600, ETH: 3000, SOL: 150 };
 async function liveCase(o) {
@@ -76,7 +100,7 @@ async function liveCase(o) {
   await q.route("**/api.gateio.ws/**", r => { if (o.gate === "fail") return r.fulfill({ status: 500, body: "x" }); const id = new URL(r.request().url()).searchParams.get("currency_pair").split("_")[0];
     r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify([{ last: String(BASE[id]) }]) }); });
   await q.goto(base); await q.waitForSelector(".card"); await q.waitForTimeout(1500);
-  return { q, hits, txt: await q.$eval("#live", e => e.innerText) };
+  return { q, hits, txt: await tabsText(q, "#live") };
 }
 { const { q, hits, txt } = await liveCase({ okxMul: { XAUT: 1.001 } });
   ok(/XAUT\s*4000/.test(txt) && /ETH\s*3000/.test(txt) && txt.includes("حي") && txt.includes("متطابق") && txt.includes("باينانس"), "live: 4 prices shown, label live, source, cross-check matched");
@@ -101,7 +125,7 @@ async function obCase(o) {
     r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ data: [book(mids[s], 1, 1, 1)] }) }); });
   await q.route("**/api.gateio.ws/api/v4/spot/order_book*", r => { if (o.gate === "fail") return r.fulfill({ status: 500, body: "x" }); const u = new URL(r.request().url()); r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(book(mids[sym(u)], 1, 1, 1)) }); });
   await q.goto(base); await q.waitForSelector(".card"); await q.waitForTimeout(1500);
-  return { q, txt: await q.$eval("#obook", e => e.innerText) };
+  return { q, txt: await tabsText(q, "#obook") };
 }
 { const { q, txt } = await obCase({});
   ok(txt.includes("حي") && txt.includes("باينانس") && /XAUT/.test(txt) && txt.includes("نطاق"), "order book: 4 rows, label live, source, band shown");
