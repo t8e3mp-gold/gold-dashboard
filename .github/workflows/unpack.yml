@@ -1,0 +1,52 @@
+name: Apply bundle
+# One push, many files: commit incoming/bundle.b64 (base64 of a .tar.gz). Only allowlisted folders are extracted,
+# tests and the secret scan must pass, then the files are committed and the bundle is removed.
+on:
+  push:
+    branches: [main]
+    paths: ["incoming/bundle.b64"]
+permissions:
+  contents: write
+concurrency: apply-bundle
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install jsonschema==4.26.0
+      - name: Extract allowlisted paths only
+        run: |
+          python3 - <<'PY'
+          import base64, io, os, posixpath, tarfile
+          ALLOW = ("site", "modules", "pipeline", "schemas", "tests", "docs", "tools")
+          ROOT_OK = {"requirements.txt", "README.md"}
+          raw = base64.b64decode(open("incoming/bundle.b64").read())
+          assert len(raw) < 8_000_000, "bundle too large"
+          tf = tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz"); total = 0; n = 0
+          for m in tf.getmembers():
+              p = posixpath.normpath(m.name)
+              if m.isdir(): continue
+              assert m.isreg(), "only regular files: " + m.name
+              assert not p.startswith("/") and ".." not in p.split("/"), "bad path: " + m.name
+              assert p in ROOT_OK or p.split("/")[0] in ALLOW, "path not allowed: " + p
+              assert m.size < 1_000_000, "file too large: " + p
+              total += m.size
+              os.makedirs(os.path.dirname(p) or ".", exist_ok=True)
+              open(p, "wb").write(tf.extractfile(m).read()); n += 1
+          assert total < 5_000_000, "bundle content too large"
+          print("extracted", n, "files")
+          PY
+      - run: python -m unittest discover -s tests
+      - run: python tools/scan.py .
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q --cached incoming/bundle.b64; rm -f incoming/bundle.b64
+          git add -A
+          git commit -m "Apply bundle"
+          git pull --rebase origin main
+          git push
