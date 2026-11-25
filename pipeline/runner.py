@@ -12,6 +12,8 @@ def p(*a): return os.path.join(ROOT, *a)
 
 def load_manifests(root=ROOT):
     reg = V.load(os.path.join(root, "modules", "registry.json"))
+    extra = [x for x in os.environ.get("EXTRA_MODULES", "").split(",") if x]
+    reg = {"enabled": list(reg["enabled"]) + [x for x in extra if x not in reg["enabled"]]}
     schema = V.load(os.path.join(root, "schemas", "manifest.schema.json"))
     mans, errs = {}, []
     for mid in reg["enabled"]:
@@ -68,19 +70,55 @@ def order(mans):
             out.append(m); done.add(m)
     return out
 
+def sandbox_prefix(network):
+    """Command prefix that removes network access for modules that did not declare it.
+    Fails closed: if no isolation mechanism works, a no-network module is not run."""
+    if network:
+        return []
+    probes = [["unshare", "-rn"],
+              ["sudo", "-n", "unshare", "-n", "setpriv", f"--reuid={os.getuid()}", f"--regid={os.getgid()}", "--clear-groups"]]
+    for pre in probes:
+        try:
+            if subprocess.run(pre + ["true"], capture_output=True, timeout=10).returncode == 0:
+                return pre
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    return None
+
+def _limits(timeout):
+    import resource
+    def f():
+        resource.setrlimit(resource.RLIMIT_AS, (2 << 30, 2 << 30))
+        resource.setrlimit(resource.RLIMIT_FSIZE, (50 << 20, 50 << 20))
+        resource.setrlimit(resource.RLIMIT_CPU, (int(timeout) + 5, int(timeout) + 5))
+    return f
+
 def run_module(m, data_dir, root=ROOT, now=None):
-    """Returns (status, detail). Publishes outputs only if all validate."""
+    """Returns (status, detail). Runs in a throwaway copy of the module with only its declared inputs.
+    Network is off unless permissions.network is true. Publishes outputs only if all validate."""
     env_schema = V.load(os.path.join(root, "schemas", "envelope.schema.json"))
     mdir = os.path.join(root, "modules", m["id"])
-    tmp = tempfile.mkdtemp(prefix="mod-")
+    box = tempfile.mkdtemp(prefix="mod-")
+    tmp = os.path.join(box, "out"); os.makedirs(tmp)
     try:
+        sdata = os.path.join(box, "data"); os.makedirs(sdata)
         for i in m["inputs"]:
-            if not os.path.exists(os.path.join(data_dir, i + ".json")):
+            src = os.path.join(data_dir, i + ".json")
+            if not os.path.exists(src):
                 return "failed", f"missing input '{i}'"
-        cmd = [sys.executable if c == "python" else c for c in m["run"]]
-        r = subprocess.run(cmd, cwd=mdir, capture_output=True, text=True, timeout=m.get("timeout_s", 120),
-                           env={"PATH": os.environ.get("PATH", ""), "DATA_DIR": data_dir, "OUT_DIR": tmp,
-                                "PYTHONPATH": os.path.join(root, "pipeline")})
+            shutil.copy(src, os.path.join(sdata, i + ".json"))
+        sdir = os.path.join(box, "module"); shutil.copytree(mdir, sdir)
+        net = bool(m.get("permissions", {}).get("network", False))
+        pre = sandbox_prefix(net)
+        if pre is None:
+            return "failed", "no network isolation available on this machine; refusing to run a no-network module unsandboxed"
+        envp = {"PATH": os.environ.get("PATH", ""), "DATA_DIR": sdata, "OUT_DIR": tmp,
+                "PYTHONPATH": os.path.join(root, "pipeline")}
+        # env is passed as arguments because sudo resets the environment of the command it starts
+        cmd = pre + ["env", "-i"] + [f"{k}={v}" for k, v in envp.items()] + [sys.executable if c == "python" else c for c in m["run"]]
+        tmo = m.get("timeout_s", 120)
+        r = subprocess.run(cmd, cwd=sdir, capture_output=True, text=True, timeout=tmo, preexec_fn=_limits(tmo),
+                           env=envp)
         if r.returncode != 0:
             return "failed", "exit %d: %s" % (r.returncode, r.stderr.strip()[-300:])
         stale_all = []
@@ -91,7 +129,6 @@ def run_module(m, data_dir, root=ROOT, now=None):
             doc = V.load(fp)
             sch = V.load(os.path.join(mdir, o["schema"]))
             errs, stale = V.validate_output(doc, sch, env_schema, now)
-            errs += V.lint_schema(sch)
             if o["id"] in m.get("history", []):
                 oldp = os.path.join(data_dir, o["id"] + ".json")
                 if os.path.exists(oldp):
@@ -105,7 +142,7 @@ def run_module(m, data_dir, root=ROOT, now=None):
     except subprocess.TimeoutExpired:
         return "failed", "timeout"
     finally:
-        shutil.rmtree(tmp, ignore_errors=True)
+        shutil.rmtree(box, ignore_errors=True)
 
 def main(root=ROOT, data_dir=None):
     data_dir = data_dir or os.path.join(root, "data")

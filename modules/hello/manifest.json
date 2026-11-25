@@ -11,5 +11,6 @@
   "max_age_hours": 48,
   "schedule": "daily",
   "run": ["python", "run.py"],
+  "permissions": {"network": false},
   "view": {"tab": "modules", "title": "وقت آخر تشغيل", "type": "text"}
 }

@@ -1,60 +1,28 @@
-"""Validation gate. Stdlib only. Every module output must pass before it is published."""
-import json, re
+"""Validation gate. Schema checks use the standard `jsonschema` library (Draft 2020-12).
+Freshness and the record envelope are checked here on top of it."""
+import json
 from datetime import datetime, timezone
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import SchemaError
 
 LABELS = ["measured", "simulated", "live", "hypothesis", "ai"]
 
-KNOWN = {"type", "required", "properties", "items", "enum", "pattern", "minimum", "minItems",
-         "description", "title", "$schema", "$id"}
-
-def lint_schema(s, path="$"):
-    """Reject schema keywords this validator would silently ignore."""
-    errs = []
-    if not isinstance(s, dict):
-        return [f"{path}: schema must be an object"]
-    for k in s:
-        if k not in KNOWN:
-            errs.append(f"{path}: unsupported keyword '{k}'")
-    for k, sub in s.get("properties", {}).items():
-        errs += lint_schema(sub, f"{path}.properties.{k}")
-    if "items" in s:
-        errs += lint_schema(s["items"], f"{path}.items")
-    return errs
-
-def _type_ok(v, t):
-    return {"object": isinstance(v, dict), "array": isinstance(v, list),
-            "string": isinstance(v, str), "boolean": isinstance(v, bool),
-            "number": isinstance(v, (int, float)) and not isinstance(v, bool),
-            "integer": isinstance(v, int) and not isinstance(v, bool),
-            "null": v is None}[t]
+def lint_schema(s):
+    """Return [] if `s` is itself a valid Draft 2020-12 schema, else error strings."""
+    try:
+        Draft202012Validator.check_schema(s)
+        return []
+    except SchemaError as e:
+        return [f"invalid schema: {e.message}"]
 
 def check_schema(v, s, path="$"):
-    """Small JSON Schema subset: type, required, properties, items, enum, pattern, minimum, minItems."""
+    bad = lint_schema(s)
+    if bad:
+        return bad
     errs = []
-    t = s.get("type")
-    if t:
-        ts = t if isinstance(t, list) else [t]
-        if not any(_type_ok(v, x) for x in ts):
-            return [f"{path}: expected {t}"]
-    if "enum" in s and v not in s["enum"]:
-        errs.append(f"{path}: not in {s['enum']}")
-    if "pattern" in s and isinstance(v, str) and not re.search(s["pattern"], v):
-        errs.append(f"{path}: pattern mismatch")
-    if "minimum" in s and isinstance(v, (int, float)) and v < s["minimum"]:
-        errs.append(f"{path}: below minimum")
-    if isinstance(v, dict):
-        for k in s.get("required", []):
-            if k not in v:
-                errs.append(f"{path}: missing '{k}'")
-        for k, sub in s.get("properties", {}).items():
-            if k in v:
-                errs += check_schema(v[k], sub, f"{path}.{k}")
-    if isinstance(v, list):
-        if "minItems" in s and len(v) < s["minItems"]:
-            errs.append(f"{path}: fewer than {s['minItems']} items")
-        if "items" in s:
-            for i, x in enumerate(v):
-                errs += check_schema(x, s["items"], f"{path}[{i}]")
+    for e in sorted(Draft202012Validator(s).iter_errors(v), key=lambda e: list(map(str, e.path))):
+        where = path + "".join(f"[{p}]" if isinstance(p, int) else f".{p}" for p in e.path)
+        errs.append(f"{where}: {e.message[:120]}")
     return errs
 
 def parse_ts(x):

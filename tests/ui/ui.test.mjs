@@ -10,7 +10,7 @@ const srv = http.createServer((q, r) => {
 const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--no-sandbox"] });
 async function load(mutate) {
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 }); const p = await ctx.newPage();
-  if (mutate) await p.route("**/data/meta.json", async rt => { const j = JSON.parse(fs.readFileSync(path.join(DATA, "meta.json"), "utf8")); mutate(j); rt.fulfill({ contentType: "application/json", body: JSON.stringify(j) }); });
+  if (mutate) await p.route("**/data/meta.json*", async rt => { const j = JSON.parse(fs.readFileSync(path.join(DATA, "meta.json"), "utf8")); mutate(j); rt.fulfill({ contentType: "application/json", body: JSON.stringify(j) }); });
   await p.goto(base); await p.waitForSelector(".card"); return p;
 }
 // 1. fresh data: every card shows source, time, label, status; no overflow; timestamp not wrapped
@@ -30,4 +30,19 @@ p = await load(j => { for (const m of Object.values(j.modules)) { m.status = "fa
 ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("مشكلة")), "banner shows when a module failed");
 ok((await p.$$eval(".card", cs => cs.map(c => c.innerText))).every(t => t.includes("تحذير")), "failed module warning on card");
 await p.screenshot({ path: "/tmp/ui-failed.png" });
+// 4. phone clock 5 days wrong: ages must still be right (server time is used)
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(() => { const o = Date.now; Date.now = () => o() - 5 * 864e5; });
+  const q = await ctx.newPage(); await q.goto(base); await q.waitForSelector(".card");
+  const txt = (await q.$$eval(".card", cs => cs.map(c => c.innerText))).join(" ");
+  const age = Number((txt.match(/العمر: (-?[\d.]+)/) || [])[1]);
+  ok(age >= 0 && age < 2, "age correct with a phone clock 5 days behind (age " + age + "h)");
+  ok(await q.$eval("#banner", e => e.hidden), "no false stale banner with a wrong phone clock"); }
+// 5. offline: service worker serves last data and says so
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 } }); const q = await ctx.newPage();
+  await q.goto(base); await q.waitForSelector(".card"); await q.evaluate(() => navigator.serviceWorker.ready);
+  await q.reload(); await q.waitForSelector(".card"); await q.waitForTimeout(500);
+  await ctx.setOffline(true); await q.reload(); await q.waitForSelector(".card", { timeout: 8000 });
+  ok(await q.$eval("#banner", e => !e.hidden && e.innerText.includes("غير متصل")), "offline: cards still shown with an offline banner");
+  await q.screenshot({ path: "/tmp/ui-offline.png" }); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

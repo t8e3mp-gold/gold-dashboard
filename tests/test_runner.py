@@ -75,7 +75,8 @@ class Runner(unittest.TestCase):
         d = self.mk({"m": (["nope"], "m", self.ok("m"))}); dd = os.path.join(d, "data"); os.makedirs(dd)
         self.assertEqual(runner.run_module(runner.load_manifests(d)[0]["m"], dd, d)[0], "failed")
     def test_unknown_schema_keyword_rejected(self):
-        self.assertTrue(V.lint_schema({"type": "object", "properties": {"a": {"maxLength": 3}}}))
+        self.assertTrue(V.lint_schema({"type": "nonsense"}))
+        self.assertTrue(V.check_schema(5, {"type": "object", "properties": {"a": {"type": "nonsense"}}}))
         self.assertEqual(V.lint_schema({"type": "object", "properties": {"a": {"type": "string"}}}), [])
     def test_unproduced_input_flagged(self):
         d = self.mk({"m": (["nope"], "m", self.ok("m"))}); dd = os.path.join(d, "data"); os.makedirs(dd)
@@ -96,6 +97,22 @@ class Runner(unittest.TestCase):
         st, detail = runner.run_module(runner.load_manifests(d)[0]["m"], dd, d)
         self.assertEqual(st, "failed"); self.assertIn("history", detail)
         self.assertEqual(json.load(open(os.path.join(dd, "m.json"))), old)
+    def test_network_blocked_by_default(self):
+        code = ("import socket,sys\ntry:\n    socket.create_connection(('1.1.1.1', 53), timeout=3)\n    sys.exit(0)\n"
+                "except OSError:\n    sys.exit(7)\n")
+        d = self.mk({"n": ([], "n", code)}); dd = os.path.join(d, "data"); os.makedirs(dd)
+        st, detail = runner.run_module(runner.load_manifests(d)[0]["n"], dd, d)
+        self.assertEqual(st, "failed"); self.assertIn("exit 7", detail)
+    def test_module_sees_only_declared_inputs(self):
+        code = ("import os,sys\nsys.exit(0 if sorted(os.listdir(os.environ['DATA_DIR'])) == ['a.json'] else 9)\n")
+        d = self.mk({"s": (["a"], "s", code)}); dd = os.path.join(d, "data"); os.makedirs(dd)
+        open(os.path.join(dd, "a.json"), "w").write("{}"); open(os.path.join(dd, "secret.json"), "w").write("{}")
+        st, detail = runner.run_module(runner.load_manifests(d)[0]["s"], dd, d)
+        self.assertNotIn("exit 9", detail)
+    def test_drill_module_fails_and_others_publish(self):
+        d = self.mk({"good": ([], "good", self.ok("good"))})
+        os.environ["EXTRA_MODULES"] = "x"; self.addCleanup(os.environ.pop, "EXTRA_MODULES", None)
+        mans, errs = runner.load_manifests(d); self.assertTrue(errs)
     def test_real_repo_lint(self):
         mans, _ = runner.load_manifests(ROOT)
         self.assertEqual(runner.lint_manifests(mans, ROOT), [])

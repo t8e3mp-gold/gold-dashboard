@@ -1,0 +1,15 @@
+{
+  "id": "drill",
+  "name_ar": "تجربة فشل (لا تعمل إلا يدويا)",
+  "name_en": "Failure drill (manual only)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": [],
+  "outputs": [{"id": "drill", "schema": "schema/drill.schema.json"}],
+  "label": "measured",
+  "source": {"name": "Deliberate failure drill", "url": "https://github.com/t8e3mp-gold/gold-dashboard"},
+  "max_age_hours": 24,
+  "schedule": "manual",
+  "run": ["python", "run.py"],
+  "view": {"tab": "modules", "title": "تجربة فشل", "type": "text"}
+}

@@ -22,3 +22,10 @@ Every JSON file is written by a module, validated, then committed by a GitHub Ac
 
 ## Flow
 refresh.yml (daily, or manual) -> tests -> runner -> validate -> commit data -> pages.yml deploys.
+
+## Isolation, health and pushing (added in stage A hardening)
+- Modules run in a throwaway copy with only their declared inputs, no secrets, resource limits, and no network unless the manifest says `"permissions": {"network": true}`. If network isolation is not available on the machine, a no-network module is refused (fails closed).
+- Time on the page comes from the server (HTTP Date + Age), not the phone clock. The page caches its shell and last data (service worker) and says when it is offline.
+- `Watchdog` workflow (every 6h) fails if data is older than 26h, a module failed, the live site is behind the repo, or the last scheduled refresh failed or is missing.
+- `Refresh data` can be started with `drill=true` to prove the failure path.
+- Many files in one push: commit `incoming/bundle.b64` (base64 of a tar.gz). The `Apply bundle` workflow extracts only allowlisted folders, runs tests and the scan, commits as the bot, and deletes the bundle. Workflow files themselves are never extracted from a bundle.
