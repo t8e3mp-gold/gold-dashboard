@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 5; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 6; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -39,7 +39,7 @@ function candleView(cs) {
   pl.setAttribute("fill", "none"); pl.setAttribute("stroke", "#D4AF37"); pl.setAttribute("stroke-width", "1.5");
   svg.append(pl); w.append(svg);
   const d = $("div", "src", "عدد الشموع المغلقة: " + cs.length + " | من "); const a = $("bdi", null, day(cs[0][0])); a.dir = "ltr";
-  const b = $("bdi", null, day(last[0])); b.dir = "ltr"; d.append(a, " إلى ", b, " | أدنى " + lo + " | أعلى " + hi);
+  const b = $("bdi", null, day(last[0])); b.dir = "ltr"; d.append(a, " إلى ", b, " | أدنى إغلاق " + lo + " | أعلى إغلاق " + hi);
   w.append(d); return w;
 }
 
@@ -58,7 +58,7 @@ function recCard(mod, rec) {
   if (mod.status !== "ok") s.append($("div", "src", "تحذير: آخر تشغيل للوحدة " + (mod.status === "failed" ? "فشل" : "قديم") + (mod.detail ? " (" + mod.detail + ")" : "")));
   const ck = rec.checked_against;
   if (ck) {
-    const x = $("div", "src", "مطابقة مع " + ck.source + ": ");
+    const x = $("div", "src", "مطابقة مع " + ck.source + (ck.value != null ? ": " : ""));
     if (ck.value != null) { const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v); }
     x.append(ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
     x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
