@@ -26,7 +26,10 @@ const pc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t =>
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
 const kc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.includes("شموع"));
 ok(kc.length === 8 && kc.every(t => t.includes("آخر إغلاق") && t.includes("الفرق الوسيط")), "8 candle cards, each with last close and cross-check");
-ok(await p.$$eval(".spark", e => e.length === 8 && e.every(x => x.querySelector("polyline").getAttribute("points").length > 100)), "8 sparklines drawn");
+ok(await p.$$eval(".spark:not(.flowbars)", e => e.length === 8 && e.every(x => x.querySelector("polyline").getAttribute("points").length > 100)), "8 sparklines drawn");
+const fc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.includes("تدفق"));
+ok(fc.length === 8 && fc.every(t => t.includes("الصافي") && t.includes("نسبة الشراء") && (t.includes("الفرق") || t.includes("بلا مطابقة"))), "8 flow cards: net delta, buy share, and a check or a no-check warning");
+ok(await p.$$eval(".flowbars", e => e.length === 8 && e.every(x => x.querySelectorAll("rect").length === 48)), "8 delta bar charts of 48 bars");
 await p.screenshot({ path: "/tmp/ui-fresh.png" });
 // 2. forced stale data: banner and stale badge appear
 p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });

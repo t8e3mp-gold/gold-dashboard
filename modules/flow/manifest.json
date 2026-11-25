@@ -1,0 +1,17 @@
+{
+  "id": "flow",
+  "name_ar": "تدفق الشراء والبيع (الدلتا) لـ XAUT وBNB وETH وSOL",
+  "name_en": "Buy/sell volume flow (delta)",
+  "version": "1.0.0",
+  "kind": "source",
+  "inputs": ["klines"],
+  "outputs": [{"id": "flow", "schema": "schema/flow.schema.json"}],
+  "label": "measured",
+  "source": {"name": "Binance public data mirror (taker buy volume per candle, aggTrades check)", "url": "https://data-api.binance.vision/api/v3/klines"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": true},
+  "timeout_s": 150,
+  "view": {"tab": "modules", "title": "تدفق الشراء والبيع", "type": "chart"}
+}

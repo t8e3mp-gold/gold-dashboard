@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 7; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 8; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -43,10 +43,28 @@ function candleView(cs) {
   w.append(d); return w;
 }
 
+function flowView(cs) {
+  const w = $("div"), l = cs[cs.length - 1], fx = n => Number(n.toPrecision(6)).toString();
+  const pct = l[1] ? l[2] / l[1] * 100 : 0;
+  w.append($("div", "val", "الصافي (شراء - بيع): " + fx(l[4])));
+  w.append($("div", "src", "آخر شمعة مغلقة: شراء " + fx(l[2]) + " | بيع " + fx(l[3]) + " | نسبة الشراء " + pct.toFixed(1) + "% | التراكمي (من بداية النافذة) " + fx(l[5])));
+  const bars = cs.slice(-48), mx = Math.max(...bars.map(r => Math.abs(r[4]))) || 1;
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 300 60"); svg.setAttribute("class", "spark flowbars"); svg.setAttribute("role", "img");
+  const z = document.createElementNS(NS, "line"); z.setAttribute("x1", 0); z.setAttribute("x2", 300); z.setAttribute("y1", 30); z.setAttribute("y2", 30); z.setAttribute("stroke", "#555"); svg.append(z);
+  bars.forEach((r, i) => { const h = Math.abs(r[4]) / mx * 28, rc = document.createElementNS(NS, "rect"), bw = 300 / bars.length;
+    rc.setAttribute("x", (i * bw + 0.5).toFixed(1)); rc.setAttribute("width", (bw - 1).toFixed(1)); rc.setAttribute("height", Math.max(h, 0.5).toFixed(1));
+    rc.setAttribute("y", (r[4] >= 0 ? 30 - h : 30).toFixed(1)); rc.setAttribute("fill", r[4] >= 0 ? "#1f9d55" : "#d64545"); svg.append(rc); });
+  w.append(svg);
+  w.append($("div", "src", "أخضر = المشترون المبادرون أكثر، أحمر = البائعون المبادرون أكثر (آخر " + bars.length + " شمعة). بيانات Binance فقط، وهي ليست نية المتداول."));
+  return w;
+}
+
 function recCard(mod, rec) {
   const c = $("div", "card");
   c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
   if (Array.isArray(rec.value) && /^candles/.test(rec.unit)) c.append(candleView(rec.value));
+  else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
   const b = badge(mod, rec);
@@ -60,10 +78,10 @@ function recCard(mod, rec) {
   if (ck) {
     const x = $("div", "src", "مطابقة مع " + ck.source + (ck.value != null ? ": " : ""));
     if (ck.value != null) { const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v); }
-    x.append(ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
+    x.append(ck.trades != null ? " | الفرق " + ck.diff_pct + "% (" + ck.trades + " صفقة)" : ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
     x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
     s.append(x);
-  } else if (rec.id.indexOf("price.") === 0) s.append($("div", "src", "تحذير: مصدر واحد فقط، بلا مطابقة"));
+  } else if (rec.id.indexOf("price.") === 0 || rec.id.indexOf("flow.") === 0) s.append($("div", "src", "تحذير: بلا مطابقة مستقلة"));
   c.append(s);
   return c;
 }
