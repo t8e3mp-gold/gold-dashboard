@@ -13,5 +13,15 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Module tests
         run: for t in modules/*/tests/test_*.py; do python "$t" || exit 1; done
+      - name: Secret and personal-data scan
+        run: python tools/scan.py .
       - name: Run pipeline on a scratch copy and validate
-        run: python -c "import sys; sys.path.insert(0,'pipeline'); import runner,tempfile; sys.exit(runner.main(runner.ROOT, tempfile.mkdtemp()))"
+        run: |
+          mkdir -p /tmp/scratch-data
+          python -c "import sys; sys.path.insert(0,'pipeline'); import runner; sys.exit(runner.main(runner.ROOT, '/tmp/scratch-data'))"
+      - uses: actions/setup-node@v4
+        with: {node-version: "22"}
+      - name: Mobile UI test (headless Chrome, fresh data)
+        run: |
+          npm install --no-save --no-package-lock playwright-core@1.65.1
+          DATA=/tmp/scratch-data CHROME="$(which google-chrome)" node tests/ui/ui.test.mjs .
