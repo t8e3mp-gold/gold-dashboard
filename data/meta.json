@@ -1,12 +1,13 @@
 {
- "generated_at": "2026-11-25T16:25:14Z",
+ "app_version": 2,
+ "generated_at": "2026-11-25T18:06:30Z",
  "manifest_errors": [],
  "modules": {
   "hello": {
    "detail": "",
    "kind": "compute",
    "label": "measured",
-   "last_ok": "2026-11-25T16:25:14Z",
+   "last_ok": "2026-11-25T18:06:30Z",
    "max_age_hours": 48,
    "name_ar": "وحدة تجريبية (قالب)",
    "name_en": "Hello (template module)",
