@@ -24,6 +24,9 @@ ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
 await p.waitForTimeout(1500);
 const pc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.includes("سعر "));
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
+const kc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.includes("شموع"));
+ok(kc.length === 8 && kc.every(t => t.includes("آخر إغلاق") && t.includes("الفرق الوسيط")), "8 candle cards, each with last close and cross-check");
+ok(await p.$$eval(".spark", e => e.length === 8 && e.every(x => x.querySelector("polyline").getAttribute("points").length > 100)), "8 sparklines drawn");
 await p.screenshot({ path: "/tmp/ui-fresh.png" });
 // 2. forced stale data: banner and stale badge appear
 p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });

@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 4; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 5; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -28,10 +28,26 @@ function badge(mod, rec) {
   return {wrap, a};
 }
 
+function candleView(cs) {
+  const w = $("div"), last = cs[cs.length - 1], day = t => new Date(t).toISOString().slice(0, 10);
+  w.append($("div", "val", "آخر إغلاق " + last[4] + " USDT"));
+  const closes = cs.map(r => r[4]), lo = Math.min(...closes), hi = Math.max(...closes);
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 300 60"); svg.setAttribute("class", "spark"); svg.setAttribute("role", "img");
+  const pl = document.createElementNS(NS, "polyline");
+  pl.setAttribute("points", closes.map((v, i) => (i * 299 / (closes.length - 1)).toFixed(1) + "," + (58 - (v - lo) / ((hi - lo) || 1) * 56).toFixed(1)).join(" "));
+  pl.setAttribute("fill", "none"); pl.setAttribute("stroke", "#D4AF37"); pl.setAttribute("stroke-width", "1.5");
+  svg.append(pl); w.append(svg);
+  const d = $("div", "src", "عدد الشموع المغلقة: " + cs.length + " | من "); const a = $("bdi", null, day(cs[0][0])); a.dir = "ltr";
+  const b = $("bdi", null, day(last[0])); b.dir = "ltr"; d.append(a, " إلى ", b, " | أدنى " + lo + " | أعلى " + hi);
+  w.append(d); return w;
+}
+
 function recCard(mod, rec) {
   const c = $("div", "card");
   c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
-  c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
+  if (Array.isArray(rec.value) && /^candles/.test(rec.unit)) c.append(candleView(rec.value));
+  else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
   const b = badge(mod, rec);
   s.append("المصدر: ");
@@ -43,8 +59,8 @@ function recCard(mod, rec) {
   const ck = rec.checked_against;
   if (ck) {
     const x = $("div", "src", "مطابقة مع " + ck.source + ": ");
-    const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v);
-    x.append(" | الفرق " + ck.diff_pct + "% ");
+    if (ck.value != null) { const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v); }
+    x.append(ck.median_diff_pct != null ? " | الفرق الوسيط " + ck.median_diff_pct + "% (الأقصى " + ck.max_diff_pct + "% على " + ck.candles_compared + " شمعة) " : " | الفرق " + ck.diff_pct + "% ");
     x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
     s.append(x);
   } else if (rec.id.indexOf("price.") === 0) s.append($("div", "src", "تحذير: مصدر واحد فقط، بلا مطابقة"));
