@@ -1,0 +1,33 @@
+// Mobile UI test. Set DATA=<dir> to test freshly generated data (CI does). Needs: npm i playwright-core@1.65.1 and a Chrome install (CI has google-chrome).
+import http from "node:http"; import fs from "node:fs"; import path from "node:path"; import { chromium } from "playwright-core";
+const ROOT = path.resolve(process.argv[2] || "."); const DATA = path.resolve(process.env.DATA || path.join(ROOT, "data")); let fails = 0;
+const ok = (c, m) => { console.log((c ? "PASS " : "FAIL ") + m); if (!c) fails++; };
+const types = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json"};
+const srv = http.createServer((q, r) => {
+  const u = decodeURIComponent(q.url.split("?")[0]); const f = u.startsWith("/data/") ? path.join(DATA, u.slice(6)) : path.join(ROOT, "site", u === "/" ? "index.html" : u);
+  if (!fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { "content-type": types[path.extname(f)] || "text/plain" }); r.end(fs.readFileSync(f));
+}).listen(0); const base = "http://127.0.0.1:" + srv.address().port + "/";
+const b = await chromium.launch({ executablePath: process.env.CHROME || "/usr/bin/google-chrome", args: ["--no-sandbox"] });
+async function load(mutate) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 }); const p = await ctx.newPage();
+  if (mutate) await p.route("**/data/meta.json", async rt => { const j = JSON.parse(fs.readFileSync(path.join(DATA, "meta.json"), "utf8")); mutate(j); rt.fulfill({ contentType: "application/json", body: JSON.stringify(j) }); });
+  await p.goto(base); await p.waitForSelector(".card"); return p;
+}
+// 1. fresh data: every card shows source, time, label, status; no overflow; timestamp not wrapped
+let p = await load(null);
+const cards = await p.$$eval(".card", cs => cs.map(c => c.innerText));
+ok(cards.length > 0, "cards rendered (" + cards.length + ")");
+ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.includes("العمر") && /مقاس|محاكاة|حي|فرضية|ذكاء اصطناعي/.test(t) && /محدّثة|قديمة/.test(t)), "every card has source, time, age, label and status");
+ok(await p.$eval("body", e => e.scrollWidth <= window.innerWidth), "no horizontal overflow at 390px");
+ok(await p.$$eval(".src bdi", bs => bs.every(x => x.getClientRects().length === 1)), "timestamps do not wrap");
+ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
+await p.screenshot({ path: "/tmp/ui-fresh.png" });
+// 2. forced stale data: banner and stale badge appear
+p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });
+ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("قديمة")), "banner shows when data is older than 26h");
+// 3. forced failed module: banner and warning on card
+p = await load(j => { for (const m of Object.values(j.modules)) { m.status = "failed"; m.detail = "test"; } });
+ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("مشكلة")), "banner shows when a module failed");
+ok((await p.$$eval(".card", cs => cs.map(c => c.innerText))).every(t => t.includes("تحذير")), "failed module warning on card");
+await p.screenshot({ path: "/tmp/ui-failed.png" });
+await b.close(); srv.close(); process.exit(fails ? 1 : 0);
