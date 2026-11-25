@@ -1,5 +1,6 @@
 import { Callout, Caption, Facts, Group, Header, Row, Rows } from '@instinct/files';
 import R from './data/research.json';
+import { Src } from './trust';
 import scalp from './data/scalp.json';
 const d: any = R;
 export function Research() {
@@ -12,6 +13,7 @@ export function Research() {
             <Rows>{d.backtests.map((b: any, j: number) => <Row key={j} number={j + 1} name={b.tf} detail={b.status} />)}</Rows>
             <Callout title="ملاحظة" tone="note">الاستراتيجيات: RSI مع بولينجر، حجم مع EMA، وشراء الهبوط وبيع الصعود. تُملأ الأرقام التفصيلية لكل إطار فور وصولها. الفراغ يعني لم تصل، وليس صفرا.</Callout>
         </Group>
+        <Src s="قناة السكالبنج على Binance (شموع عامة)، ملف research.json" t={d.updated} kind="مقاس" />
         <Group label="الاستكشاف من الأساس (مقاس)" heading>
             <Rows>{d.findings.map((x: any, j: number) => <Row key={j} number={j + 1} name={`${x[0]} [${x[2]}]`} detail={x[1]} />)}</Rows>
         </Group>
