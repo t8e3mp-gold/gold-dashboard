@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 3; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 4; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -30,7 +30,7 @@ function badge(mod, rec) {
 
 function recCard(mod, rec) {
   const c = $("div", "card");
-  c.append($("h2", null, mod.view ? mod.view.title : rec.id));
+  c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
   c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
   const b = badge(mod, rec);
@@ -40,6 +40,14 @@ function recCard(mod, rec) {
   s.append(" | العمر: " + b.a.toFixed(1) + " ساعة ");
   s.append(b.wrap);
   if (mod.status !== "ok") s.append($("div", "src", "تحذير: آخر تشغيل للوحدة " + (mod.status === "failed" ? "فشل" : "قديم") + (mod.detail ? " (" + mod.detail + ")" : "")));
+  const ck = rec.checked_against;
+  if (ck) {
+    const x = $("div", "src", "مطابقة مع " + ck.source + ": ");
+    const v = $("bdi", null, String(ck.value)); v.dir = "ltr"; x.append(v);
+    x.append(" | الفرق " + ck.diff_pct + "% ");
+    x.append($("span", "pill " + (ck.ok ? "p-ok" : "p-bad"), ck.ok ? "متطابق" : "تحذير: فرق كبير بين المصدرين (الحد " + ck.limit_pct + "%)"));
+    s.append(x);
+  } else if (rec.id.indexOf("price.") === 0) s.append($("div", "src", "تحذير: مصدر واحد فقط، بلا مطابقة"));
   c.append(s);
   return c;
 }

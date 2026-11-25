@@ -1,0 +1,17 @@
+{
+  "id": "price-spot",
+  "name_ar": "أسعار السبوت (XAUT وBNB وETH وSOL)",
+  "name_en": "Spot prices",
+  "version": "1.0.0",
+  "kind": "source",
+  "inputs": [],
+  "outputs": [{"id": "price-spot", "schema": "schema/price-spot.schema.json"}],
+  "label": "measured",
+  "source": {"name": "Binance public data mirror, OKX and Gate.io as fallbacks", "url": "https://data-api.binance.vision/api/v3/ticker/24hr"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": true},
+  "timeout_s": 90,
+  "view": {"tab": "modules", "title": "سعر السبوت", "type": "number"}
+}

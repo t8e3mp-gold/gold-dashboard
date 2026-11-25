@@ -21,6 +21,9 @@ ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.
 ok(await p.$eval("body", e => e.scrollWidth <= window.innerWidth), "no horizontal overflow at 390px");
 ok(await p.$$eval(".src bdi", bs => bs.every(x => x.getClientRects().length === 1)), "timestamps do not wrap");
 ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
+await p.waitForTimeout(1500);
+const pc = (await p.$$eval(".card", cs => cs.map(c => c.innerText))).filter(t => t.includes("سعر "));
+ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
 await p.screenshot({ path: "/tmp/ui-fresh.png" });
 // 2. forced stale data: banner and stale badge appear
 p = await load(j => { j.generated_at = "2026-01-01T00:00:00Z"; });
