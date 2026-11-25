@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Callout, Caption, Facts, Group, Header, LineChart } from '@instinct/files';
+import { Src } from './trust';
 
 const API = 'https://data-api.binance.vision/api/v3/klines';
 const COINS = ['XAUTUSDT', 'BNBUSDT', 'ETHUSDT', 'SOLUSDT'];
@@ -53,10 +54,11 @@ export function Studio() {
     const [k, setK] = useState<K[]>([]), [err, setErr] = useState(''), [load, setLoad] = useState(false);
     const [p, setP] = useState<P>({ rsiIn: 35, rsiOut: 60, tp: 0.35, sl: 0, maxBars: 200, fee: 0.1, useBB: true });
     const [bud, setBud] = useState(1000);
+    const [at, setAt] = useState('');
     useEffect(() => {
         let ok = true; setLoad(true); setErr('');
         fetch(`${API}?symbol=${sym}&interval=${tf}&limit=1000`).then(r => r.json()).then((a: any[]) => {
-            if (!ok) return; setK(a.slice(0, -1).map(r => ({ t: r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4] }))); setLoad(false);
+            if (!ok) return; setAt(new Date().toLocaleTimeString('ar-EG')); setK(a.slice(0, -1).map(r => ({ t: r[0], o: +r[1], h: +r[2], l: +r[3], c: +r[4] }))); setLoad(false);
         }).catch(() => { if (ok) { setErr('تعذر جلب بيانات Binance الآن'); setLoad(false); } });
         return () => { ok = false; };
     }, [sym, tf]);
@@ -97,6 +99,7 @@ export function Studio() {
                 { label: 'الاحتفاظ بنفس الفترة', value: `${f2(hold)} بالمئة` },
             ]} />
             {curve.length > 1 && <LineChart label="الرصيد التراكمي بالنسبة المئوية، صفقة بصفقة" xName="الصفقة" data={curve} />}
+            <Src s={`Binance klines ${sym} ${tf} (آخر 1000 شمعة، تحسب في متصفحك)`} t={at} kind="محاكاة" />
             {T.length < 30 && <Callout title="عينة صغيرة" tone="warning">أقل من 30 صفقة لا تثبت شيئا. التنفيذ يتم عند فتح الشمعة التالية، وإذا لمست شمعة الوقف والهدف معا يُحسب الوقف أولا. لا انزلاق سعري. تغيير الأرقام حتى تظهر نتيجة جيدة هو ملاءمة للماضي وليس دليلا.</Callout>}
         </Group>
         <Group label="حاسبة دفعات التجميع (3 دفعات متساوية)" heading>
