@@ -56,4 +56,27 @@ ok(await p.$eval("#banner", e => e.hidden), "no new-version banner when versions
   await ctx.setOffline(true); await q.reload(); await q.waitForSelector(".card", { timeout: 8000 });
   ok(await q.$eval("#banner", e => !e.hidden && e.innerText.includes("غير متصل")), "offline: cards still shown with an offline banner");
   await q.screenshot({ path: "/tmp/ui-offline.png" }); }
+// 6. live prices (browser-side): mocked exchanges
+const BASE = { XAUT: 4000, BNB: 600, ETH: 3000, SOL: 150 };
+async function liveCase(o) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 }); const q = await ctx.newPage(); const hits = { binance: 0 };
+  await q.route("**/data-api.binance.vision/**", r => { hits.binance++; if (o.binance === "451") return r.fulfill({ status: 451, body: "blocked" });
+    r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(Object.entries(BASE).map(([k, v]) => ({ symbol: k + "USDT", price: String(o.binance === "zero" ? 0 : v) }))) }); });
+  await q.route("**/www.okx.com/**", r => { if (o.okx === "fail") return r.fulfill({ status: 500, body: "x" }); const id = new URL(r.request().url()).searchParams.get("instId").split("-")[0];
+    r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ data: [{ last: String(BASE[id] * (o.okxMul && o.okxMul[id] || 1)) }] }) }); });
+  await q.route("**/api.gateio.ws/**", r => { if (o.gate === "fail") return r.fulfill({ status: 500, body: "x" }); const id = new URL(r.request().url()).searchParams.get("currency_pair").split("_")[0];
+    r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify([{ last: String(BASE[id]) }]) }); });
+  await q.goto(base); await q.waitForSelector(".card"); await q.waitForTimeout(1500);
+  return { q, hits, txt: await q.$eval("#live", e => e.innerText) };
+}
+{ const { q, hits, txt } = await liveCase({ okxMul: { XAUT: 1.001 } });
+  ok(/XAUT\s*4000/.test(txt) && /ETH\s*3000/.test(txt) && txt.includes("حي") && txt.includes("متطابق") && txt.includes("Binance"), "live: 4 prices shown, label live, source, cross-check matched");
+  ok(await q.$eval("body", e => e.scrollWidth <= window.innerWidth), "live: no horizontal overflow");
+  await q.screenshot({ path: "/tmp/ui-live.png" });
+  await q.waitForTimeout(10500); ok(hits.binance >= 2, "live: polls again after about 10 s (requests: " + hits.binance + ")"); }
+{ const { txt } = await liveCase({ okxMul: { XAUT: 1.02 } }); ok(txt.includes("تحذير فرق"), "live: a 2% source difference raises the warning"); }
+{ const { txt } = await liveCase({ binance: "451" }); ok(/XAUT\s*4000/.test(txt) && txt.includes("OKX") && txt.includes("بديل"), "live: falls back to OKX when Binance answers 451"); }
+{ const { txt } = await liveCase({ binance: "zero" }); ok(txt.includes("OKX") && !/XAUT\s*0\b/.test(txt), "live: a zero price from Binance is rejected"); }
+{ const { txt } = await liveCase({ binance: "451", okx: "fail" }); ok(txt.includes("Gate.io") && /XAUT\s*4000/.test(txt), "live: falls back to Gate.io when Binance and OKX fail"); }
+{ const { txt } = await liveCase({ binance: "451", okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "live: all sources down shows a clear warning and no price"); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

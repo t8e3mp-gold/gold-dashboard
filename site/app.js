@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 6; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 7; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -68,6 +68,71 @@ function recCard(mod, rec) {
   return c;
 }
 
+
+// ---- Live prices (B1b): fetched by this page from public exchange APIs, never from our data files. Label: live.
+const LIVE = {syms: ["XAUT", "BNB", "ETH", "SOL"], pollMs: 10000, checkEvery: 3, maxDiff: 0.5, staleSec: 35};
+const LSRC = {
+  binance: {name: "Binance public data mirror", url: "https://data-api.binance.vision/api/v3/ticker/price",
+    get: async () => { const r = await fetch("https://data-api.binance.vision/api/v3/ticker/price?symbols=" + encodeURIComponent(JSON.stringify(LIVE.syms.map(x => x + "USDT"))), {cache: "no-store"}); if (!r.ok) throw new Error("binance " + r.status);
+      const o = {}; for (const t of await r.json()) o[t.symbol.slice(0, -4)] = Number(t.price); return o; }},
+  okx: {name: "OKX", url: "https://www.okx.com/api/v5/market/ticker",
+    get: async () => { const o = {}; await Promise.all(LIVE.syms.map(async s => { const r = await fetch("https://www.okx.com/api/v5/market/ticker?instId=" + s + "-USDT", {cache: "no-store"}); if (!r.ok) throw new Error("okx " + r.status); o[s] = Number((await r.json()).data[0].last); })); return o; }},
+  gate: {name: "Gate.io", url: "https://api.gateio.ws/api/v4/spot/tickers",
+    get: async () => { const o = {}; await Promise.all(LIVE.syms.map(async s => { const r = await fetch("https://api.gateio.ws/api/v4/spot/tickers?currency_pair=" + s + "_USDT", {cache: "no-store"}); if (!r.ok) throw new Error("gate " + r.status); o[s] = Number((await r.json())[0].last); })); return o; }},
+};
+const validPrices = o => LIVE.syms.every(s => Number.isFinite(o[s]) && o[s] > 0);
+const live = {n: 0, ok: null, errs: {}};
+async function livePoll() {
+  live.n++;
+  let prim = null, name = null; live.errs = {};
+  for (const k of ["binance", "okx", "gate"]) {
+    try { const o = await LSRC[k].get(); if (!validPrices(o)) throw new Error("bad data"); prim = o; name = k; break; }
+    catch (e) { live.errs[k] = String(e.message || e).slice(0, 40); }
+  }
+  if (prim) {
+    let chk = live.ok && live.ok.chk && live.n % LIVE.checkEvery ? live.ok.chk : null;
+    if (!chk || live.n % LIVE.checkEvery === 1 || live.n === 1) {
+      for (const k of ["okx", "gate", "binance"].filter(x => x !== name)) {
+        try { const o = await LSRC[k].get(); if (validPrices(o)) { chk = {k, o}; break; } } catch (e) { /* the check is optional */ }
+      }
+    }
+    live.ok = {name, prices: prim, chk, at: nowMs(), t0: performance.now()};
+  }
+  renderLive();
+}
+function renderLive() {
+  const box = document.getElementById("live"); if (!box) return;
+  box.replaceChildren(); box.append($("h2", null, "الأسعار الحية (من المتصفح مباشرة)"));
+  const l = live.ok, age = l ? (performance.now() - l.t0) / 1000 : null, stale = !l || age > LIVE.staleSec;
+  if (!l) { box.append($("div", "src", "تحذير: تعذّر جلب الأسعار الحية من كل المصادر: " + Object.entries(live.errs).map(([k, v]) => k + " " + v).join("، "))); return; }
+  for (const s of LIVE.syms) {
+    const row = $("div", "lrow"); row.append($("span", "lsym", s));
+    const v = $("bdi", "val", String(l.prices[s])); v.dir = "ltr"; row.append(v);
+    if (l.chk) { const d = Math.abs(l.prices[s] - l.chk.o[s]) / l.chk.o[s] * 100, okc = d <= LIVE.maxDiff;
+      row.append($("span", "pill " + (okc ? "p-ok" : "p-bad"), okc ? "متطابق " + d.toFixed(3) + "%" : "تحذير فرق " + d.toFixed(2) + "%")); }
+    box.append(row);
+  }
+  const f = $("div", "src"); f.append($("span", "pill p-lbl", LABELS.live), $("span", "pill " + (stale ? "p-bad" : "p-ok"), stale ? "قديمة" : "محدّثة"));
+  f.append(" المصدر: "); const a = $("a", null, LSRC[l.name].name); a.href = LSRC[l.name].url; a.rel = "noopener"; f.append(a);
+  if (l.name !== "binance") f.append(" (بديل: " + Object.keys(live.errs).join("، ") + " تعذّر)");
+  if (l.chk) f.append(" | المطابقة: " + LSRC[l.chk.k].name);
+  else f.append(" | تحذير: بلا مطابقة");
+  f.append(" | الوقت: "); const tm = $("bdi", null, new Date(l.at).toISOString().slice(0, 19) + "Z"); tm.dir = "ltr"; f.append(tm);
+  f.append(" | العمر: " + Math.round(age) + " ث");
+  box.append(f);
+}
+function startLive(main) {
+  const box = $("section", "live"); box.id = "live"; main.parentNode.insertBefore(box, main);
+  renderLive();
+  let timer = null;
+  const tick = async () => { if (document.hidden || !navigator.onLine) { renderLive(); return; } try { await livePoll(); } catch (e) { /* shown as stale */ } };
+  const loop = () => { clearInterval(timer); tick(); timer = setInterval(() => { tick(); }, LIVE.pollMs); };
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) loop(); });
+  window.addEventListener("online", loop);
+  setInterval(renderLive, 1000);
+  loop();
+}
+
 async function main() {
   const meta = await getJSON("data/meta.json", true);
   bust = meta.generated_at;
@@ -85,6 +150,7 @@ async function main() {
   const tabs = {};
   for (const [id, m] of Object.entries(meta.modules)) { const t = (m.view && m.view.tab) || "modules"; (tabs[t] = tabs[t] || []).push([id, m]); }
   const nav = document.getElementById("tabs"), main = document.getElementById("main");
+  startLive(main);
   const names = {modules: "الوحدات"};
   async function show(t) {
     [...nav.children].forEach(b => b.classList.toggle("on", b.dataset.t === t));
