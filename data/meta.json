@@ -1,35 +1,12 @@
 {
- "generated_at": "2026-11-25T15:23:51Z",
+ "generated_at": "2026-11-25T16:25:14Z",
  "manifest_errors": [],
  "modules": {
-  "drill": {
-   "detail": "exit 3: deliberate failure for the drill",
-   "kind": "compute",
-   "label": "measured",
-   "last_ok": null,
-   "max_age_hours": 24,
-   "name_ar": "تجربة فشل (لا تعمل إلا يدويا)",
-   "name_en": "Failure drill (manual only)",
-   "outputs": [
-    "drill"
-   ],
-   "source": {
-    "name": "Deliberate failure drill",
-    "url": "https://github.com/t8e3mp-gold/gold-dashboard"
-   },
-   "status": "failed",
-   "version": "1.0.0",
-   "view": {
-    "tab": "modules",
-    "title": "تجربة فشل",
-    "type": "text"
-   }
-  },
   "hello": {
    "detail": "",
    "kind": "compute",
    "label": "measured",
-   "last_ok": "2026-11-25T15:23:51Z",
+   "last_ok": "2026-11-25T16:25:14Z",
    "max_age_hours": 48,
    "name_ar": "وحدة تجريبية (قالب)",
    "name_en": "Hello (template module)",
