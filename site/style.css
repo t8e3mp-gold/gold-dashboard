@@ -15,3 +15,5 @@ nav button.on{background:var(--gold);color:#000}
 .src{font-size:.78rem;color:var(--mut)}
 .src a{color:var(--mut)}
 bdi{white-space:nowrap}
+.banner{background:var(--bad);color:#fff;padding:8px 16px;max-width:720px;margin:8px auto;border-radius:8px;font-size:.9rem}
+.banner[hidden]{display:none}
