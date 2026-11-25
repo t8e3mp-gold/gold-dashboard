@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 10; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 11; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -74,12 +74,31 @@ function profileView(rec) {
   return w;
 }
 
+function intentSizeView(rec) {
+  const st = rec.stats, w = $("div"), f = x => Number(Number(x).toPrecision(5));
+  w.append($("div", "val", "حصة الصفقات الكبيرة من الحجم: " + st.large_volume_share_pct + "%"));
+  w.append($("div", "src", "الصفقات الكبيرة: " + st.large_trades + " من " + st.sample_trades + " صفقة (آخر " + st.window_hours + " ساعات) | صافي شراء الكبيرة: " + f(st.large_net_buy) + " | نسبة الشراء بين الكبيرة: " + st.large_buy_share_pct + "%"));
+  w.append($("div", "src", "حجم الصفقة: الوسيط " + f(st.p50) + " | 90% " + f(st.p90) + " | حد الكبيرة (99%) " + f(st.p99_threshold) + " | المتوسط " + f(st.mean_size)));
+  w.append($("div", "src", "فرضية وليست نية: الصفقة الكبيرة قد تكون أمرا مقسما أو روبوتا، والحد 99% اختياري. لا تعتمد عليها قبل اختبار خارج العينة."));
+  return w;
+}
+function intentDivView(rec) {
+  const v = rec.value, h = rec.stats, w = $("div"), AR = {"no divergence": "لا يوجد تباعد", "price up while net taker flow is selling": "السعر صاعد بينما صافي المشترين الفعليين سالب (بيع)", "price down while net taker flow is buying": "السعر هابط بينما صافي المشترين الفعليين موجب (شراء)"};
+  w.append($("div", "val", AR[v.state] || v.state));
+  w.append($("div", "src", "آخر " + v.window_hours + " ساعات: تغير السعر " + v.price_change_pct + "% | صافي الدلتا " + v.net_delta_pct_of_volume + "% من الحجم"));
+  w.append($("div", "src", "التاريخ (" + h.history_hours + " ساعة): " + h.past_events + " حالة سابقة" + (h.past_events ? "، تبعت الدلتا في " + h.next_window_followed_delta_direction + " (" + h.hit_rate_pct + "%، مجال 95%: " + h.ci95_low_pct + "-" + h.ci95_high_pct + "%) مقابل 50% للعملة" : "") + " | " + (h.reading === "no evidence" ? "لا دليل" : "المجال يستبعد 50% لكن غير مثبت")));
+  w.append($("div", "src", "فرضية: عينة صغيرة وغير مختبرة خارج العينة."));
+  return w;
+}
+
 function recCard(mod, rec) {
   const c = $("div", "card");
   c.append($("h2", null, rec.title_ar || (mod.view ? mod.view.title : rec.id)));
   if (Array.isArray(rec.value) && /^candles/.test(rec.unit)) c.append(candleView(rec.value));
   else if (Array.isArray(rec.value) && /^flow/.test(rec.unit)) c.append(flowView(rec.value));
   else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
+  else if (/^intent-size/.test(rec.unit) && rec.stats) c.append(intentSizeView(rec));
+  else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
   const s = $("div", "src");
   const b = badge(mod, rec);

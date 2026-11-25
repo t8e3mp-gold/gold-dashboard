@@ -1,0 +1,17 @@
+{
+  "id": "intent",
+  "name_ar": "مؤشرات نية المتداولين (فرضيات): حجم الصفقات والصفقات الكبيرة والتباعد",
+  "name_en": "Trader-intent proxies (hypotheses)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["klines", "flow"],
+  "outputs": [{"id": "intent", "schema": "schema/intent.schema.json"}],
+  "label": "hypothesis",
+  "source": {"name": "Binance public data mirror (aggTrades for XAUT; candles and taker flow for the divergence)", "url": "https://data-api.binance.vision/api/v3/aggTrades"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": true},
+  "timeout_s": 240,
+  "view": {"tab": "modules", "title": "مؤشرات النية", "type": "chart"}
+}
