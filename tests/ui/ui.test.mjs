@@ -30,6 +30,11 @@ p = await load(j => { for (const m of Object.values(j.modules)) { m.status = "fa
 ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("مشكلة")), "banner shows when a module failed");
 ok((await p.$$eval(".card", cs => cs.map(c => c.innerText))).every(t => t.includes("تحذير")), "failed module warning on card");
 await p.screenshot({ path: "/tmp/ui-failed.png" });
+// 3b. data built for a newer page than the one loaded: tell the user to reload
+p = await load(j => { j.app_version = 999; });
+ok(await p.$eval("#banner", e => !e.hidden && e.innerText.includes("نسخة أحدث")), "banner shows when data expects a newer page version");
+p = await load(null);
+ok(await p.$eval("#banner", e => e.hidden), "no new-version banner when versions match");
 // 4. phone clock 5 days wrong: ages must still be right (server time is used)
 { const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
   await ctx.addInitScript(() => { const o = Date.now; Date.now = () => o() - 5 * 864e5; });

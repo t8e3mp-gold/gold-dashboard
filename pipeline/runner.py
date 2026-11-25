@@ -1,7 +1,7 @@
 """Module runner. Reads modules/registry.json, orders modules by data dependencies,
 runs each in isolation, validates output, publishes only valid output.
 A failing module never stops the others and never overwrites its last good output."""
-import json, os, subprocess, sys, tempfile, shutil
+import json, os, re, subprocess, sys, tempfile, shutil
 from datetime import datetime, timezone
 sys.path.insert(0, os.path.dirname(__file__))
 import validate as V
@@ -9,6 +9,15 @@ import validate as V
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def p(*a): return os.path.join(ROOT, *a)
+
+def shell_version(root):
+    """Version of the page code (APP_VERSION in site/app.js) that this data was built together with."""
+    try:
+        m = re.search(r"const APP_VERSION = (\d+);", open(os.path.join(root, "site", "app.js"), encoding="utf-8").read())
+        return int(m.group(1)) if m else 0
+    except OSError:
+        return 0
+
 
 def load_manifests(root=ROOT):
     reg = V.load(os.path.join(root, "modules", "registry.json"))
@@ -150,7 +159,7 @@ def main(root=ROOT, data_dir=None):
     mans, errs = load_manifests(root)
     mp = os.path.join(data_dir, "meta.json")
     prev = V.load(mp) if os.path.exists(mp) else {"modules": {}}
-    meta = {"schema_version": 1, "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    meta = {"schema_version": 1, "app_version": shell_version(root), "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "manifest_errors": errs, "modules": {}}
     for mid in order(mans):
         m = mans[mid]

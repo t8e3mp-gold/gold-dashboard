@@ -1,4 +1,5 @@
 "use strict";
+const APP_VERSION = 2; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -53,6 +54,7 @@ async function main() {
   if (g > 26) msgs.push("البيانات قديمة: آخر تحديث قبل " + g.toFixed(0) + " ساعة (الحد 26 ساعة)");
   if (bad.length) msgs.push("وحدات بها مشكلة: " + bad.join("، "));
   if (meta.manifest_errors.length) msgs.push("أخطاء في تعريف الوحدات");
+  if (Number(meta.app_version || 0) > APP_VERSION) msgs.push("نسخة أحدث من الصفحة متاحة: أعد تحميل الصفحة (قد تكون نسخة قديمة محفوظة مؤقتا)");
   const bn = document.getElementById("banner");
   if (offline) msgs.unshift("غير متصل: عرض آخر نسخة محفوظة، والأعمار تقريبية");
   if (msgs.length) { bn.textContent = msgs.join(" | "); bn.hidden = false; }
