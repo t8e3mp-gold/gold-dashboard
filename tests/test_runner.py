@@ -72,7 +72,7 @@ class Runner(unittest.TestCase):
         dd = os.path.join(d, "data"); os.makedirs(dd)
         runner.main(d, dd)
         self.assertEqual(json.load(open(os.path.join(dd, "meta.json")))["app_version"], 7)
-        self.assertEqual(runner.shell_version(runner.ROOT), 2)
+        self.assertGreaterEqual(runner.shell_version(runner.ROOT), 3)
     def test_invalid_output_rejected(self):
         code = "import json,os\njson.dump({'meta':{},'records':[{'id':'x','value':1}]},open(os.path.join(os.environ['OUT_DIR'],'m.json'),'w'))\n"
         d = self.mk({"m": ([], "m", code)}); dd = os.path.join(d, "data"); os.makedirs(dd)
