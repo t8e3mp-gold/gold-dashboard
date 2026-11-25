@@ -85,4 +85,26 @@ async function liveCase(o) {
 { const { txt } = await liveCase({ binance: "zero" }); ok(txt.includes("OKX") && !/XAUT\s*0\b/.test(txt), "live: a zero price from Binance is rejected"); }
 { const { txt } = await liveCase({ binance: "451", okx: "fail" }); ok(txt.includes("Gate.io") && /XAUT\s*4000/.test(txt), "live: falls back to Gate.io when Binance and OKX fail"); }
 { const { txt } = await liveCase({ binance: "451", okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "live: all sources down shows a clear warning and no price"); }
+// 7. order book (browser only): mocked depth
+function book(mid, depth, bidMul, askMul) { const bids = [], asks = []; for (let i = 0; i < 100; i++) { bids.push([String((mid * (1 - 0.00002 * (i + 1))).toFixed(4)), String(depth * bidMul)]); asks.push([String((mid * (1 + 0.00002 * (i + 1))).toFixed(4)), String(depth * askMul)]); } return { bids, asks }; }
+async function obCase(o) {
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, deviceScaleFactor: 2 }); const q = await ctx.newPage(); const mids = { XAUT: 4000, BNB: 600, ETH: 3000, SOL: 150 };
+  const sym = u => (u.searchParams.get("symbol") || u.searchParams.get("instId") || u.searchParams.get("currency_pair")).split(/[-_]/)[0].replace("USDT", "");
+  await q.route("**/data-api.binance.vision/api/v3/depth*", r => { if (o.binance === "451") return r.fulfill({ status: 451, body: "x" }); const u = new URL(r.request().url()); const s = sym(u);
+    r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(o.crossed ? { bids: [["101", "1"]], asks: [["100", "1"]] } : book(mids[s], 1, s === "XAUT" ? 3 : 1, 1)) }); });
+  await q.route("**/data-api.binance.vision/api/v3/ticker/**", r => r.fulfill({ status: 500, body: "x" }));
+  await q.route("**/www.okx.com/api/v5/market/books*", r => { if (o.okx === "fail") return r.fulfill({ status: 500, body: "x" }); const u = new URL(r.request().url()); const s = sym(u);
+    r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify({ data: [book(mids[s], 1, 1, 1)] }) }); });
+  await q.route("**/api.gateio.ws/api/v4/spot/order_book*", r => { if (o.gate === "fail") return r.fulfill({ status: 500, body: "x" }); const u = new URL(r.request().url()); r.fulfill({ contentType: "application/json", headers: { "access-control-allow-origin": "*" }, body: JSON.stringify(book(mids[sym(u)], 1, 1, 1)) }); });
+  await q.goto(base); await q.waitForSelector(".card"); await q.waitForTimeout(1500);
+  return { q, txt: await q.$eval("#obook", e => e.innerText) };
+}
+{ const { q, txt } = await obCase({});
+  ok(txt.includes("حي") && txt.includes("Binance") && /XAUT/.test(txt) && txt.includes("نطاق"), "order book: 4 rows, label live, source, band shown");
+  ok(/XAUT[\s\S]*?\+50%/.test(txt) && /BNB[\s\S]*?\+0%/.test(txt), "order book: imbalance computed (XAUT bids 3x asks = +50%, BNB equal = 0%)");
+  ok(await q.$eval("body", e => e.scrollWidth <= window.innerWidth), "order book: no horizontal overflow");
+  await q.screenshot({ path: "/tmp/ui-ob.png" }); }
+{ const { txt } = await obCase({ binance: "451" }); ok(txt.includes("OKX") && txt.includes("بديل"), "order book: falls back to OKX"); }
+{ const { txt } = await obCase({ binance: "451", okx: "fail" }); ok(txt.includes("Gate.io"), "order book: falls back to Gate.io"); }
+{ const { txt } = await obCase({ crossed: true, okx: "fail", gate: "fail" }); ok(txt.includes("تعذّر جلب"), "order book: crossed or failed books are rejected with a clear warning"); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

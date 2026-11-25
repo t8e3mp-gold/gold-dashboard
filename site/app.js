@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 9; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 10; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -166,6 +166,68 @@ function startLive(main) {
   loop();
 }
 
+// ---- Live order book view: browser only, labelled live, nothing stored, never used in a backtest (no free history exists).
+const OB = {maxBand: 0.25, pollMs: 10000, staleSec: 35};
+const OBSRC = {
+  binance: {name: "Binance public data mirror", url: "https://data-api.binance.vision/api/v3/depth",
+    get: async s => { const r = await fetch("https://data-api.binance.vision/api/v3/depth?symbol=" + s + "USDT&limit=100", {cache: "no-store"}); if (!r.ok) throw new Error("binance " + r.status); const d = await r.json(); return {bids: d.bids, asks: d.asks}; }},
+  okx: {name: "OKX", url: "https://www.okx.com/api/v5/market/books",
+    get: async s => { const r = await fetch("https://www.okx.com/api/v5/market/books?instId=" + s + "-USDT&sz=100", {cache: "no-store"}); if (!r.ok) throw new Error("okx " + r.status); const d = (await r.json()).data[0]; return {bids: d.bids, asks: d.asks}; }},
+  gate: {name: "Gate.io", url: "https://api.gateio.ws/api/v4/spot/order_book",
+    get: async s => { const r = await fetch("https://api.gateio.ws/api/v4/spot/order_book?currency_pair=" + s + "_USDT&limit=100", {cache: "no-store"}); if (!r.ok) throw new Error("gate " + r.status); const d = await r.json(); return {bids: d.bids, asks: d.asks}; }},
+};
+// Pure function (tested): imbalance inside a price band around the mid. band = smaller of OB.maxBand and what both sides of the 100 levels really cover.
+function obMetrics(raw) {
+  const b = raw.bids.map(x => [Number(x[0]), Number(x[1])]), a = raw.asks.map(x => [Number(x[0]), Number(x[1])]);
+  if (!b.length || !a.length || [...b, ...a].some(x => !(x[0] > 0) || !(x[1] >= 0))) throw new Error("bad book");
+  if (b[0][0] >= a[0][0]) throw new Error("crossed book");
+  const mid = (b[0][0] + a[0][0]) / 2, reach = Math.min((mid - b[b.length - 1][0]) / mid * 100, (a[a.length - 1][0] - mid) / mid * 100);
+  const band = Math.max(Math.min(OB.maxBand, reach), 0);
+  const bv = b.filter(x => x[0] >= mid * (1 - band / 100)).reduce((t, x) => t + x[1], 0);
+  const av = a.filter(x => x[0] <= mid * (1 + band / 100)).reduce((t, x) => t + x[1], 0);
+  return {mid, spreadPct: (a[0][0] - b[0][0]) / mid * 100, band, bv, av, imb: bv + av > 0 ? (bv - av) / (bv + av) : 0};
+}
+const ob = {ok: null, errs: {}};
+async function obPoll() {
+  ob.errs = {};
+  for (const k of ["binance", "okx", "gate"]) {
+    try {
+      const out = {};
+      await Promise.all(LIVE.syms.map(async s => { out[s] = obMetrics(await OBSRC[k].get(s)); }));
+      ob.ok = {name: k, m: out, at: nowMs(), t0: performance.now()}; renderOb(); return;
+    } catch (e) { ob.errs[k] = String(e.message || e).slice(0, 40); }
+  }
+  renderOb();
+}
+function renderOb() {
+  const box = document.getElementById("obook"); if (!box) return;
+  box.replaceChildren(); box.append($("h2", null, "دفتر الأوامر الحي (من المتصفح مباشرة)"));
+  const o = ob.ok, age = o ? (performance.now() - o.t0) / 1000 : null, stale = !o || age > OB.staleSec;
+  if (!o) { box.append($("div", "src", "تحذير: تعذّر جلب دفتر الأوامر من كل المصادر: " + Object.entries(ob.errs).map(([k, v]) => k + " " + v).join("، "))); return; }
+  for (const s of LIVE.syms) {
+    const m = o.m[s], row = $("div", "lrow"); row.append($("span", "lsym", s));
+    const pct = Math.round((m.imb + 1) / 2 * 100), bar = $("span", "obbar"), g = $("i", "obg"), r = $("i", "obr");
+    g.style.width = pct + "%"; r.style.width = (100 - pct) + "%"; bar.append(g, r); row.append(bar);
+    const t = $("bdi", "src", (m.imb >= 0 ? "+" : "") + (m.imb * 100).toFixed(0) + "%"); t.dir = "ltr"; row.append(t);
+    box.append(row);
+    const d = $("div", "src", "نطاق ±" + m.band.toFixed(3) + "% | شراء " + Number(m.bv.toPrecision(5)) + " | بيع " + Number(m.av.toPrecision(5)) + " | الفارق " + m.spreadPct.toFixed(4) + "%");
+    box.append(d);
+  }
+  const f = $("div", "src"); f.append($("span", "pill p-lbl", LABELS.live), $("span", "pill " + (stale ? "p-bad" : "p-ok"), stale ? "قديمة" : "محدّثة"));
+  f.append(" المصدر: "); const a = $("a", null, OBSRC[o.name].name); a.href = OBSRC[o.name].url; a.rel = "noopener"; f.append(a);
+  if (o.name !== "binance") f.append(" (بديل: " + Object.keys(ob.errs).join("، ") + " تعذّر)");
+  f.append(" | الوقت: "); const tm = $("bdi", null, new Date(o.at).toISOString().slice(0, 19) + "Z"); tm.dir = "ltr"; f.append(tm);
+  f.append(" | العمر: " + Math.round(age) + " ث"); box.append(f);
+  box.append($("div", "src", "لقطة لحظية لأول 100 مستوى فقط، أخضر = أوامر شراء واقفة أكثر، أحمر = أوامر بيع أكثر. الأوامر الواقفة قد تُلغى أو تكون وهمية، ولا تدل على نية. لا يُحفظ لها تاريخ ولا تدخل في أي اختبار رجعي."));
+}
+function startOb(anchor) {
+  const box = $("section", "live"); box.id = "obook"; anchor.after(box); renderOb();
+  let timer = null; const tick = async () => { if (document.hidden || !navigator.onLine) { renderOb(); return; } try { await obPoll(); } catch (e) { /* shown as stale */ } };
+  const loop = () => { clearInterval(timer); tick(); timer = setInterval(tick, OB.pollMs); };
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) loop(); }); window.addEventListener("online", loop);
+  setInterval(renderOb, 1000); loop();
+}
+
 async function main() {
   const meta = await getJSON("data/meta.json", true);
   bust = meta.generated_at;
@@ -184,6 +246,7 @@ async function main() {
   for (const [id, m] of Object.entries(meta.modules)) { const t = (m.view && m.view.tab) || "modules"; (tabs[t] = tabs[t] || []).push([id, m]); }
   const nav = document.getElementById("tabs"), main = document.getElementById("main");
   startLive(main);
+  startOb(document.getElementById("live"));
   const names = {modules: "الوحدات"};
   async function show(t) {
     [...nav.children].forEach(b => b.classList.toggle("on", b.dataset.t === t));
