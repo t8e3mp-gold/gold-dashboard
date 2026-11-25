@@ -1,13 +1,13 @@
 {
- "app_version": 9,
- "generated_at": "2026-11-25T20:30:18Z",
+ "app_version": 11,
+ "generated_at": "2026-11-25T20:45:05Z",
  "manifest_errors": [],
  "modules": {
   "flow": {
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:30:18Z",
+   "last_ok": "2026-11-25T20:45:05Z",
    "max_age_hours": 8,
    "name_ar": "تدفق الشراء والبيع (الدلتا) لـ XAUT وBNB وETH وSOL",
    "name_en": "Buy/sell volume flow (delta)",
@@ -30,7 +30,7 @@
    "detail": "",
    "kind": "compute",
    "label": "measured",
-   "last_ok": "2026-11-25T20:30:18Z",
+   "last_ok": "2026-11-25T20:45:05Z",
    "max_age_hours": 48,
    "name_ar": "وحدة تجريبية (قالب)",
    "name_en": "Hello (template module)",
@@ -49,11 +49,34 @@
     "type": "text"
    }
   },
+  "intent": {
+   "detail": "",
+   "kind": "compute",
+   "label": "hypothesis",
+   "last_ok": "2026-11-25T20:45:05Z",
+   "max_age_hours": 8,
+   "name_ar": "مؤشرات نية المتداولين (فرضيات): حجم الصفقات والصفقات الكبيرة والتباعد",
+   "name_en": "Trader-intent proxies (hypotheses)",
+   "outputs": [
+    "intent"
+   ],
+   "source": {
+    "name": "Binance public data mirror (aggTrades for XAUT; candles and taker flow for the divergence)",
+    "url": "https://data-api.binance.vision/api/v3/aggTrades"
+   },
+   "status": "ok",
+   "version": "1.0.0",
+   "view": {
+    "tab": "modules",
+    "title": "مؤشرات النية",
+    "type": "chart"
+   }
+  },
   "klines": {
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:30:18Z",
+   "last_ok": "2026-11-25T20:45:05Z",
    "max_age_hours": 8,
    "name_ar": "الشموع (ساعة ويوم) لـ XAUT وBNB وETH وSOL",
    "name_en": "Candles 1h and 1d",
@@ -76,7 +99,7 @@
    "detail": "",
    "kind": "source",
    "label": "measured",
-   "last_ok": "2026-11-25T20:30:18Z",
+   "last_ok": "2026-11-25T20:45:05Z",
    "max_age_hours": 8,
    "name_ar": "أسعار السبوت (XAUT وBNB وETH وSOL)",
    "name_en": "Spot prices",
@@ -99,7 +122,7 @@
    "detail": "",
    "kind": "compute",
    "label": "measured",
-   "last_ok": "2026-11-25T20:30:18Z",
+   "last_ok": "2026-11-25T20:45:05Z",
    "max_age_hours": 8,
    "name_ar": "بروفايل الحجم (POC ومنطقة القيمة) لـ XAUT وBNB وETH وSOL",
    "name_en": "Volume profile",
