@@ -29,3 +29,12 @@ refresh.yml (daily, or manual) -> tests -> runner -> validate -> commit data -> 
 - `Watchdog` workflow (every 6h) fails if data is older than 26h, a module failed, the live site is behind the repo, or the last scheduled refresh failed or is missing.
 - `Refresh data` can be started with `drill=true` to prove the failure path.
 - Many files in one push: commit `incoming/bundle.b64` (base64 of a tar.gz). The `Apply bundle` workflow extracts only allowlisted folders, runs tests and the scan, commits as the bot, and deletes the bundle. Workflow files themselves are never extracted from a bundle.
+
+## Refresh paths: Plan A, B, C (switch-over triggers)
+- **A. GitHub cron** (`Refresh data`, 05:17 UTC daily). GitHub's scheduler is best effort. On Nov 25 it fired nothing in 27 minutes on two separate schedules, so A is not trusted alone.
+- **B. Instinct keeper.** Four wakes a day (01:20, 07:20, 13:20, 19:20 Cairo) read `data/meta.json` through the GitHub API. If the data is older than 5 hours, or a scheduled run is missing, it starts `Refresh data` from the signed-in browser (drill unticked) and checks the result. No token, no account, free. Switch trigger: data older than 5h. Proven Nov 25 20:32 Cairo (run #11).
+- **C. Manual.** Open the Actions page "Refresh data", press Run workflow (leave drill unticked), or ask the assistant to do it. Switch trigger: A and B both failed, or the keeper reports a failure. A refresh link is in the page footer.
+- The `Watchdog` fails visibly if all three fail and the data passes 26 hours.
+
+## Second source per module (Plan B for data)
+Each module that reads an outside source must name a fallback source in its manifest notes. The fallback result is shown with its own source and label and is never merged silently. The first price modules (stage B) will use data-api.binance.vision as A and a second independent source as B. That source is not chosen yet.

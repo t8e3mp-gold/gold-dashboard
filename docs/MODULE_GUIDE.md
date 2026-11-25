@@ -19,3 +19,6 @@ Output schemas may use only: type, required, properties, items, enum, pattern, m
 
 ## Repo checks (CI)
 Unit tests, module tests, a secret and personal-data scan (`python tools/scan.py .`), a pipeline run on scratch data, and a mobile UI test (`tests/ui/ui.test.mjs`).
+
+## Fallback source (Plan B)
+If your module reads an outside source, say in `README.md` of the module which second source replaces it when the first is down or blocked. Show the fallback's own source and label. Never blend two sources into one number.
