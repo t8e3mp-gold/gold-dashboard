@@ -188,4 +188,12 @@ async function obCase(o) {
   ok(/سُجّل: \d+ مرة/.test(txt) && /العينة الآن صغيرة/.test(txt), "forward-log counts and small-sample warning shown");
   ok(/الهدف المطلوب: نجاح 98%/.test(txt), "forward-log shows the 98% target it is measured against");
   await ctx.close(); }
+// G1 drill: a 1% disagreement between price sources must show the warning pill on every price card (record forced through the page's real renderer)
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" }); const q = await ctx.newPage();
+  await q.route("**/data/price-spot.json*", async rt => { const j = JSON.parse(fs.readFileSync(path.join(DATA, "price-spot.json"), "utf8")); for (const r of j.records) if (r.id.startsWith("price.") && r.checked_against) { r.checked_against.diff_pct = 1.0; r.checked_against.ok = false; } rt.fulfill({ contentType: "application/json", body: JSON.stringify(j) }); });
+  await q.goto(base); await q.waitForSelector(".card");
+  await q.evaluate(() => document.querySelectorAll("details.sec").forEach(d => d.open = true));
+  let bad = 0; for (const t of ["XAUT", "ETH", "SOL", "BNB"]) { await q.click('nav button[data-t="' + t + '"]'); await q.waitForTimeout(150); await q.$$eval("details.sec", ds => ds.forEach(d => { d.open = true; })); bad += await q.$$eval(".pill.p-bad", e => e.filter(x => x.innerText.includes("فرق كبير")).length); }
+  ok(bad === 4, "1% source disagreement shows the warning pill on all 4 price cards (" + bad + ")");
+  await ctx.close(); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);
