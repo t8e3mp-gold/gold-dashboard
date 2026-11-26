@@ -297,22 +297,27 @@ const LSRC = {
   gate: {name: "جيت", url: "https://api.gateio.ws/api/v4/spot/tickers",
     get: async () => { const o = {}; await Promise.all(LIVE.syms.map(async s => { const r = await fetch("https://api.gateio.ws/api/v4/spot/tickers?currency_pair=" + s + "_USDT", {cache: "no-store"}); if (!r.ok) throw new Error("gate " + r.status); o[s] = Number((await r.json())[0].last); })); return o; }},
 };
+// P9: a source that just failed (429 or any error) is skipped for COOL_MS so we do not hammer a rate-limited API every 10 s; if every source is cooling the poll is skipped (the old data keeps its age and turns stale by itself).
+const COOL_MS = 30000, cool = {};
+const coolFail = (grp, k) => { cool[grp + k] = performance.now() + COOL_MS; };
+const order = (grp, ks) => ks.filter(k => !(cool[grp + k] > performance.now()));
 const validPrices = o => LIVE.syms.every(s => Number.isFinite(o[s]) && o[s] > 0);
 const live = {n: 0, ok: null, errs: {}};
 let LIVEBOX = null, OBBOX = null, curSym = null;
 const symsShown = () => LIVE.syms.filter(x => !curSym || x === curSym);
 async function livePoll() {
+  const srcs = order("L", ["binance", "okx", "gate"]); if (!srcs.length) { renderLive(); return; }
   live.n++;
   let prim = null, name = null; live.errs = {};
-  for (const k of ["binance", "okx", "gate"]) {
+  for (const k of srcs) {
     try { const o = await LSRC[k].get(); if (!validPrices(o)) throw new Error("bad data"); prim = o; name = k; break; }
-    catch (e) { live.errs[k] = String(e.message || e).slice(0, 40); }
+    catch (e) { live.errs[k] = String(e.message || e).slice(0, 40); coolFail("L", k); }
   }
   if (prim) {
     let chk = live.ok && live.ok.chk && live.n % LIVE.checkEvery ? live.ok.chk : null;
     if (!chk || live.n % LIVE.checkEvery === 1 || live.n === 1) {
-      for (const k of ["okx", "gate", "binance"].filter(x => x !== name)) {
-        try { const o = await LSRC[k].get(); if (validPrices(o)) { chk = {k, o}; break; } } catch (e) { /* the check is optional */ }
+      for (const k of order("L", ["okx", "gate", "binance"]).filter(x => x !== name)) {
+        try { const o = await LSRC[k].get(); if (validPrices(o)) { chk = {k, o}; break; } } catch (e) { coolFail("L", k); /* the check is optional */ }
       }
     }
     live.ok = {name, prices: prim, chk, at: nowMs(), t0: performance.now()};
@@ -378,13 +383,14 @@ function obMetrics(raw) {
 }
 const ob = {ok: null, errs: {}};
 async function obPoll() {
+  const srcs = order("O", ["binance", "okx", "gate"]); if (!srcs.length) { renderOb(); return; }
   ob.errs = {};
-  for (const k of ["binance", "okx", "gate"]) {
+  for (const k of srcs) {
     try {
       const out = {};
       await Promise.all(LIVE.syms.map(async s => { out[s] = obMetrics(await OBSRC[k].get(s)); }));
       ob.ok = {name: k, m: out, at: nowMs(), t0: performance.now()}; renderOb(); return;
-    } catch (e) { ob.errs[k] = String(e.message || e).slice(0, 40); }
+    } catch (e) { ob.errs[k] = String(e.message || e).slice(0, 40); coolFail("O", k); }
   }
   renderOb();
 }
