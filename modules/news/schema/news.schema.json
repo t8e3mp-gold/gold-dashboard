@@ -1,0 +1,4 @@
+{"type": "object", "required": ["meta", "records"],
+ "properties": {"records": {"type": "array", "minItems": 4, "maxItems": 4,
+   "items": {"type": "object", "required": ["value", "stats", "label"], "properties": {"label": {"enum": ["measured"]},
+     "value": {"type": "object", "required": ["events", "headlines", "stance"]}}}}}}

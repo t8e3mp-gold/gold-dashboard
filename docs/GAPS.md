@@ -57,3 +57,7 @@ Likelihood / impact: L = low, M = medium, H = high. "Fixed now" says what is don
 - G23 Backtest uses 1h candles only. Order-book walls and intent signals have no history, so they are untested. Status: open (needs the forward log R6).
 - G24 Backtest tests 4 rules x up to 3 settings x 24 exits on the first 60% and reports the best on the last 40%. More rules tried means more chance of a lucky result. All were negative, so this did not flatter the result. Status: mitigated.
 - G25 Backtest results are a committed file rebuilt by running modules/backtest/r1.py (needs network), not on every refresh. The page shows the run time. Status: mitigated.
+- G26 News coverage: BLS (CPI, jobs) returns HTTP 403 to automated fetches and the Egyptian central bank rejects them (checked Nov 26), so the big US inflation and jobs dates are not in the calendar. Only FOMC and BEA dates are. Status: open. Plan B ideas: another free official calendar; the user can add dates by hand.
+- G27 FOMC statement hour (14:00 New York) is not on the Fed page; it is assumed and marked as assumed. Status: mitigated.
+- G28 Headlines are shown as published and are not scored. The leak/trap flag is a simple rule (event within 2 h and a 2-candle move of 2 ATR or more), untested on history. Status: hypothesis.
+- G29 Feeds were reached from my machine; they must also work from the GitHub runner. The page names any feed that failed in the last refresh. Status: verify on first live refresh.

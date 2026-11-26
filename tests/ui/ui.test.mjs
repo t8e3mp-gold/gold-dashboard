@@ -38,7 +38,7 @@ ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.
 ok(!X.overflow, "no horizontal overflow at 390px in any tab (all sections open)");
 ok(X.wrap, "timestamps do not wrap");
 ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
-ok(cards.length >= 47, "all 47 cards are reachable through the tabs (" + cards.length + ")");
+ok(cards.length >= 51, "all 51 cards are reachable through the tabs (" + cards.length + ")");
 ok(await p.$$eval("nav button", bs => bs.map(b => b.innerText).join(",") === "XAUT,ETH,SOL,BNB,النظام"), "tab row: XAUT, ETH, SOL, BNB, then system");
 const pc = cards.filter(t => t.startsWith("سعر "));
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
@@ -156,5 +156,19 @@ async function obCase(o) {
   ok(!/لم يُبنَ بعد[^]{0,40}الاختبارات/.test(txt), "no backtest placeholder left");
   const srcs = await q.evaluate(() => [...document.querySelectorAll(".card")].filter(c => /الاختبار الرجعي/.test(c.innerText)).map(c => c.querySelector(".src:last-of-type") ? c.innerText : ""));
   ok(!/Binance public klines backtest/.test(txt), "backtest source translated to Arabic");
+  await ctx.close(); }
+// news section (R4): headlines with Cairo time, scheduled events, wait + possible leak/trap flags (mocked event in window), failed feed warning
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" }); const q = await ctx.newPage();
+  await q.route("**/data/news.json*", async r => { const d = JSON.parse(fs.readFileSync(path.join(DATA, "news.json"), "utf8")); const now = Date.now();
+    d.records.forEach(x => { x.value.stance.wait = true; x.value.stance.leak_trap = true; x.value.stance.move_in_atr = 3.5; x.value.stance.next_event = { title: "TEST EVENT", start: new Date(now + 3600e3).toISOString(), source: "BEA", time_assumed: false }; x.stats.feeds.ecb = { ok: false, error: "URLError" }; });
+    r.fulfill({ contentType: "application/json", body: JSON.stringify(d) }); });
+  await q.goto(base); await q.waitForSelector(".card");
+  const txt = await q.evaluate(() => { document.querySelectorAll("details.sec").forEach(d => d.open = true); return document.body.innerText; });
+  ok(/الأخبار والأحداث المجدولة/.test(txt), "news section present");
+  ok(/احتمال تسريب أو فخ/.test(txt), "leak/trap flag shown when flagged");
+  ok(/تحذير: مصادر لم تعمل/.test(txt) && /البنك المركزي الأوروبي/.test(txt), "failed feed is named, not hidden");
+  ok(/الإصدار الرسمي تأكيد وليس أول إشارة/.test(txt), "official release is confirmation rule stated");
+  ok(!/Al Jazeera RSS, Federal Reserve/.test(txt), "news source name translated");
+  const hl = await q.evaluate(() => document.querySelectorAll(".card a[href^=http]").length); ok(hl >= 8, "headlines are links (" + hl + ")");
   await ctx.close(); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);
