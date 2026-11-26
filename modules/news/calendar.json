@@ -1,6 +1,6 @@
 {
  "checked": "2026-11-26",
- "note": "Dates relayed by the assistant's calendar agent, checked against the official pages on 2026-11-26. The BLS pages return HTTP 403 to automated fetches from this repo, so these are committed by hand and must be re-checked. 08:30 America/New_York.",
+ "note": "BLS events refreshed automatically from the BLS iCal feed by tools/calendar_sync.py on 2026-11-26; other events as committed. 08:30 America/New_York.",
  "events": [
   {
    "title": "US jobs report (NFP)",
@@ -10,22 +10,8 @@
    "source": "https://www.bls.gov/schedule/news_release/empsit.htm"
   },
   {
-   "title": "US jobs report (NFP)",
-   "date": "2027-01-08",
-   "time_et": "08:30",
-   "verified": true,
-   "source": "https://www.bls.gov/schedule/news_release/empsit.htm"
-  },
-  {
    "title": "US CPI inflation",
    "date": "2026-12-10",
-   "time_et": "08:30",
-   "verified": true,
-   "source": "https://www.bls.gov/schedule/news_release/cpi.htm"
-  },
-  {
-   "title": "US CPI inflation",
-   "date": "2027-01-13",
    "time_et": "08:30",
    "verified": true,
    "source": "https://www.bls.gov/schedule/news_release/cpi.htm"
