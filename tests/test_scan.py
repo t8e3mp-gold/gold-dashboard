@@ -12,6 +12,9 @@ class Scan(unittest.TestCase):
     def test_private_key(self): self.assertIn("private-key", self.kinds("-----BEGIN " + "RSA PRIVATE KEY-----"))
     def test_phone(self): self.assertIn("phone", self.kinds("call +1 415 555 0132"))
     def test_dates_ok(self): self.assertEqual(self.kinds("fetched 2026-11-25T14:32:23Z and 2026-11-25"), [])
+    def test_action_sha_pin_ok(self): self.assertEqual(self.kinds("      - uses: actions/checkout@" + "a" * 40 + " # v4\n"), [])
+    def test_bare_sha_still_flagged(self): self.assertIn("long-secret", self.kinds("key: " + "a" * 40))
+    def test_sha_in_other_line_flagged(self): self.assertIn("long-secret", self.kinds("run: echo " + "a" * 40))
     def test_repo_clean(self): self.assertEqual(scan.scan(ROOT), [])
 if __name__ == "__main__":
     unittest.main()
