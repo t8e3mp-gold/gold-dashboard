@@ -60,6 +60,17 @@ def parse_fomc(page, now):
             out.append({"title": "FOMC statement day", "start": loc.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "FOMC calendar", "time_assumed": True})
     return out
 
+def load_calendar(path):
+    """Hand-committed dates (BLS blocks automated fetches). Only verified dates become events. Times are New York local."""
+    with open(path, encoding="utf-8") as f: cal = json.load(f)
+    out = []
+    for e in cal["events"]:
+        if not e.get("verified"): continue
+        hh, mm = map(int, e["time_et"].split(":")); y, mo, d = map(int, e["date"].split("-"))
+        loc = datetime(y, mo, d, hh, mm, tzinfo=ZoneInfo("America/New_York"))
+        out.append({"title": e["title"], "start": loc.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "source": "official calendar (checked " + cal["checked"] + ")", "time_assumed": False, "url": e["source"]})
+    return out
+
 def atr_pct(k):
     tr = [max(k[i][2] - k[i][3], abs(k[i][2] - k[i - 1][4]), abs(k[i][3] - k[i - 1][4])) / k[i - 1][4] for i in range(1, len(k))]
     t = tr[-14:]; return sum(t) / len(t)
@@ -108,6 +119,9 @@ def main():
         try:
             code, txt = get(url); ev = fn(txt, now); events += ev; status[key] = {"ok": bool(ev), "http": code, "items": len(ev)}
         except Exception as e: status[key] = {"ok": False, "error": type(e).__name__}
+    try:
+        cev = load_calendar(os.path.join(os.path.dirname(os.path.abspath(__file__)), "calendar.json")); events += cev; status["calendar"] = {"ok": bool(cev), "items": len(cev)}
+    except Exception as e: status["calendar"] = {"ok": False, "error": type(e).__name__}
     if not feeds_res and not events: raise SystemExit("no news feed and no calendar reachable: " + json.dumps(status))
     with open(os.path.join(d, "klines.json"), encoding="utf-8") as f: kl = json.load(f)
     doc = build(feeds_res, events, kl, now)

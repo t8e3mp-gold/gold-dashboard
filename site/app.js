@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 17; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 18; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -12,7 +12,7 @@ const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
 const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
 function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
 function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
-const arSrc = t => String(t).replace(/Al Jazeera RSS, Federal Reserve press RSS, ECB press RSS, Fed FOMC calendar, BEA release schedule/g, "خلاصات الجزيرة، بيانات الاحتياطي الفيدرالي والبنك المركزي الأوروبي، تقويم الفيدرالي، جدول مكتب التحليل الاقتصادي").replace(/Binance public klines backtest \(run by this repo\)/g, "اختبار رجعي على شموع باينانس العامة (من هذا المستودع)").replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
+const arSrc = t => String(t).replace(/Al Jazeera RSS, Federal Reserve press RSS, ECB press RSS, Fed FOMC calendar, BEA release schedule/g, "خلاصات الجزيرة، بيانات الاحتياطي الفيدرالي والبنك المركزي الأوروبي، تقويم الفيدرالي، جدول مكتب التحليل الاقتصادي").replace(/levels, news and backtest modules \(computed rules, no AI\)/g, "وحدات المستويات والأخبار والاختبار الرجعي (قواعد محسوبة بدون ذكاء اصطناعي)").replace(/Binance public klines backtest \(run by this repo\)/g, "اختبار رجعي على شموع باينانس العامة (من هذا المستودع)").replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -189,7 +189,8 @@ function backtestView(rec) {
   w.append($("div", "src", any ? "بعض القواعد موجبة خارج العينة: لا تُعتبر مثبتة قبل عينة أكبر." : "لا قاعدة موجبة بعد الرسوم خارج العينة. نسبة نجاح عالية مع صافٍ سالب تعني أن الخسائر أكبر من الأرباح. شرطك (98% على 1000+ صفقة وسحب أقل من 20% وصافٍ موجب) غير متحقق؛ أكبر عينة هنا " + mx + " صفقة."));
   return w;
 }
-const FEEDAR = {"aljazeera-en": "الجزيرة (إنجليزي)", "aljazeera-ar": "الجزيرة (عربي)", fed: "الاحتياطي الفيدرالي (رسمي)", ecb: "البنك المركزي الأوروبي (رسمي)", fomc: "تقويم الفيدرالي", bea: "جدول مكتب التحليل الاقتصادي الأمريكي"};
+const FEEDAR = {"aljazeera-en": "الجزيرة (إنجليزي)", "aljazeera-ar": "الجزيرة (عربي)", fed: "الاحتياطي الفيدرالي (رسمي)", ecb: "البنك المركزي الأوروبي (رسمي)", fomc: "تقويم الفيدرالي", calendar: "تقويم رسمي مكتوب يدويا", bea: "جدول مكتب التحليل الاقتصادي الأمريكي"};
+const EVSRC = src => /^official calendar/.test(src) ? "تقويم رسمي (مراجعة يدوية " + (src.match(/\d{4}-\d{2}-\d{2}/) || [""])[0] + ")" : src === "BEA" ? "مكتب التحليل الاقتصادي" : src === "FOMC calendar" ? "تقويم الفيدرالي" : src;
 function newsView(rec) {
   const w = $("div"), v = rec.value, sx = v.stance, nowMs = Date.now(), fm = n => Number(Number(n).toPrecision(4)).toString();
   const mk = (t, k) => $("span", "pill " + k, t);
@@ -199,7 +200,7 @@ function newsView(rec) {
   top.append($("div", "src", "حركة آخر ساعتين: " + fm(sx.move_2h_pct) + "% (" + fm(sx.move_in_atr) + " ضعف متوسط المدى الساعي " + fm(sx.atr_1h_pct) + "%). تُرفع علامة التسريب فقط إذا كان الحدث خلال ساعتين والحركة ضعفين فأكثر."));
   w.append(top);
   const ne = sx.next_event;
-  if (ne) { const d = $("div", "src"); d.append("أقرب حدث مجدول: " + ne.title + " | "); d.append(timeEl(Date.parse(ne.start))); if (ne.time_assumed) d.append(" (الساعة افتراضية 14:00 نيويورك وليست من الصفحة)"); d.append(" | " + ne.source); w.append(d); }
+  if (ne) { const d = $("div", "src"); d.append("أقرب حدث مجدول: " + ne.title + " | "); d.append(timeEl(Date.parse(ne.start))); if (ne.time_assumed) d.append(" (الساعة افتراضية 14:00 نيويورك وليست من الصفحة)"); d.append(" | " + EVSRC(ne.source)); w.append(d); }
   else w.append($("div", "src", "لا حدث مجدول قادم ضمن 7 أيام في المصادر المتاحة (لا تغطي هذه المصادر مؤشر الأسعار والوظائف الأمريكية)."));
   v.events.slice(0, 6).forEach(e => { const d = $("div", "src"); d.append("• " + e.title + " | "); d.append(timeEl(Date.parse(e.start))); w.append(d); });
   const h = $("div", "lvl"); h.append($("b", null, "آخر العناوين (كما نُشرت، بدون تقييم):")); w.append(h);
@@ -207,6 +208,33 @@ function newsView(rec) {
     const a = $("a", null, x.title); a.href = x.link; a.rel = "noopener"; a.dir = "auto"; d.append(a); w.append(d); });
   const bad = Object.entries(rec.stats.feeds).filter(([k, f]) => !f.ok);
   w.append($("div", "src", bad.length ? "تحذير: مصادر لم تعمل في آخر تحديث: " + bad.map(([k]) => FEEDAR[k] || k).join("، ") : "كل المصادر عملت في آخر تحديث."));
+  return w;
+}
+const RULEAR = {support_bounce: "ارتداد من دعم", strict_support: "دعم مشدد", rsi_oversold: "RSI", bollinger_reclaim: "بولينجر"}, STANCEAR = {wait: "انتظر", buy_watch: "مراقبة شراء", sell_watch: "مراقبة بيع"};
+function recView(rec) {
+  const w = $("div"), v = rec.value, f = n => Number(Number(n).toPrecision(7)).toString(), sg = x => (x > 0 ? "+" : "") + x, st = v.stance, ed = v.edge;
+  const top = $("div", "lvl"); top.append($("b", null, "الموقف: "), $("span", "pill " + (st === "wait" ? "p-warn" : "p-ok"), STANCEAR[st]), " ", $("span", "pill p-lbl", "فرضية"), " ", $("span", "pill p-bad", ed.proven ? "ميزة مثبتة" : "لا ميزة مثبتة"));
+  top.append($("div", "src", "عرض فقط، لا أوامر. سبوت، شراء على الهبوط وبيع على الصعود بشرائح، بدون رافعة.")); w.append(top);
+  const R = {
+    no_edge: r => "لا ميزة مثبتة بعد الاختبار الرجعي: أفضل قاعدة (" + (r.best ? RULEAR[r.best.rule] || r.best.rule : "-") + ") خارج العينة " + (r.best ? sg(r.best.avg_net_pct) + "% للصفقة بعد الرسوم على " + r.best.trades + " صفقة" : "بلا صفقات") + "؛ " + r.positive + " من " + r.tested + " قواعد موجبة. الشرط للخروج من الانتظار: " + ed.min_trades + " صفقة فأكثر وصافٍ موجب.",
+    news_wait: () => "نافذة حدث مجدول (من ساعتين قبله إلى ساعة بعده): الانتظار هو الافتراضي.",
+    leak_trap: () => "احتمال تسريب أو فخ: حركة حادة قبل إصدار مجدول، لا تُلاحَق.",
+    near_support: () => "السعر قريب من أقرب دعم (ضمن متوسط مدى ساعي واحد).", near_resistance: () => "السعر قريب من أقرب مقاومة (ضمن متوسط مدى ساعي واحد).", forming_bounce: () => "ارتداد يتشكل عند منطقة (وصف لما حدث وليس توقعا)."};
+  const rs = $("div", "lvl"); rs.append($("b", null, "الأسباب (بالترتيب):"));
+  if (!v.reasons.length) rs.append($("div", "src", "لا أسباب للانتظار ولا إشارة قريبة."));
+  v.reasons.forEach((r, i) => rs.append($("div", "src", (i + 1) + ". " + R[r.code](r)))); w.append(rs);
+  const bp = v.buy_plan;
+  if (bp) { const d = $("div", "lvl"); d.style.borderInlineStartColor = LV.sup.c; d.append($("b", null, "خطة شراء مشروطة (ليست توصية): "));
+    d.append("إذا وصل السعر لمنطقة " + f(bp.zone_lo) + " - " + f(bp.zone_hi) + " (تبعد " + f(bp.dist_pct) + "% تحت السعر) وأغلقت شمعة ساعة فوقها فهي منطقة دخول للمراقبة. إبطال الفكرة: تحت " + f(bp.invalidation) + " (خسارة محتملة " + f(bp.risk_pct) + "% من الدخول)." +
+      (bp.target ? " هدف أول " + f(bp.target) + " (+" + f(bp.reward_pct) + "%)، العائد إلى المخاطرة بعد الرسوم " + f(bp.rr_after_fees) + "." : "") + " عينة المنطقة: " + bp.samples + " لمسة، ارتد منها " + bp.bounces + "."); w.append(d); }
+  const sp = v.sell_plan;
+  if (sp) { const d = $("div", "lvl"); d.style.borderInlineStartColor = LV.res.c; d.append($("b", null, "خطة بيع بشرائح لو عندك الأصل (ليست توصية): "));
+    d.append(sp.tranches.map(t => "شريحة عند " + f(t.lo) + " - " + f(t.hi) + " (" + sg(f(t.dist_pct)) + "%، " + t.samples + " لمسة وارتد " + t.bounces + ")").join("؛ ") + ". احتفظ بالباقي إذا أغلق السعر فوق " + f(sp.hold_rest_above) + "."); w.append(d); }
+  const abc = $("div", "lvl"); abc.append($("b", null, "الخطط: "));
+  abc.append($("div", "src", "أ: انتظر لمس الدعم ثم إغلاق ساعة فوقه قبل أي فكرة شراء."), $("div", "src", "ب: إذا أغلقت شمعة ساعة تحت مستوى الإبطال فالفكرة ملغاة، ارجع لقسم المستويات."), $("div", "src", "ج: عند حدث مجدول أو علامة تسريب: لا إجراء حتى ساعة بعد الإصدار الرسمي."));
+  w.append(abc);
+  if (v.news.next_event) { const e = $("div", "src"); e.append("أقرب حدث مجدول: " + v.news.next_event.title + " | "); e.append(timeEl(Date.parse(v.news.next_event.start))); w.append(e); }
+  const t = v.inputs_time, a = $("div", "src"); a.append("أعمار المدخلات: المستويات "); a.append(timeEl(Date.parse(t.levels))); a.append("، الأخبار "); a.append(timeEl(Date.parse(t.news))); a.append("، الاختبار الرجعي "); a.append(timeEl(Date.parse(t.backtest))); w.append(a);
   return w;
 }
 function recCard(mod, rec, sym) {
@@ -221,6 +249,7 @@ function recCard(mod, rec, sym) {
   else if (rec.unit === "levels" && rec.value) c.append(levelsView(rec, sym));
   else if (rec.unit === "backtest" && rec.value) c.append(backtestView(rec));
   else if (rec.unit === "news" && rec.value) c.append(newsView(rec));
+  else if (rec.unit === "recommendation" && rec.value) c.append(recView(rec));
   else if (/^xcheck/.test(rec.unit) && rec.stats) c.append(xcheckView(rec));
   else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
@@ -405,6 +434,7 @@ async function main() {
   const SECS = [
     ["levels", "المستويات المراقَبة (فرضيات)", r => /^levels\./.test(r.id)],
     ["news", "الأخبار والأحداث المجدولة", r => /^news\./.test(r.id)],
+    ["rec", "التوصية والمنطقة وإبطال الفكرة (فرضية)", r => /^recommendation\./.test(r.id)],
     ["price", "لقطة السعر والفحص", r => /^(price|change24h)\./.test(r.id)],
     ["kline", "الشموع", r => /^kline\./.test(r.id)],
     ["flow", "التدفق (دلتا المشترين والبائعين)", r => /^flow\./.test(r.id)],
@@ -415,7 +445,8 @@ async function main() {
   const find = (c, f) => all.filter(x => x.r && coinOf(x.r) === c && f(x.r));
   const fx = n => Number(Number(n).toPrecision(6)).toString();
   function oneLine(key, c) {
-    const L = {news: () => { const x = find(c, r => /^news\./.test(r.id))[0]; if (!x) return ""; const sx = x.r.value.stance; return (sx.wait ? "انتظر (حدث مجدول)" : "لا حدث مجدول قريب") + (sx.leak_trap ? " | احتمال تسريب أو فخ" : ""); },
+    const L = {rec: () => { const x = find(c, r => /^recommendation\./.test(r.id))[0]; if (!x) return ""; return STANCEAR[x.r.value.stance] + " | " + (x.r.value.edge.proven ? "ميزة مثبتة" : "لا ميزة مثبتة"); },
+      news: () => { const x = find(c, r => /^news\./.test(r.id))[0]; if (!x) return ""; const sx = x.r.value.stance; return (sx.wait ? "انتظر (حدث مجدول)" : "لا حدث مجدول قريب") + (sx.leak_trap ? " | احتمال تسريب أو فخ" : ""); },
       tests: () => { const x = find(c, r => /^backtest\./.test(r.id))[0]; if (!x) return ""; const p = Object.values(x.r.value.strategies).filter(r => r.out_of_sample && r.out_of_sample.trades); const pos = p.filter(r => r.out_of_sample.avg_net_per_trade_pct > 0).length; return pos + " من " + p.length + " قواعد موجبة خارج العينة"; },
       levels: () => { const x = find(c, r => /^levels\./.test(r.id))[0]; if (!x) return ""; const pk = levelPick(x.r.value.zones, x.r.value.price_ref), f = n => Number(Number(n).toPrecision(7)); return "أقرب دعم " + (pk.sup1 ? f(pk.sup1.mid) : "-") + " | أقرب مقاومة " + (pk.res1 ? f(pk.res1.mid) : "-"); },
       kline: () => { const x = find(c, r => /^kline\..*\.1h$/.test(r.id))[0]; return x ? "آخر إغلاق ساعة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
@@ -431,8 +462,9 @@ async function main() {
   function headFor(c) {
     const h = $("div", "head"); h.append($("h2", null, c + " / USDT"));
     const hp = $("div"); hp.append("السعر الحي: "); const v = $("bdi", "val", "..."); v.id = "headprice"; v.dir = "ltr"; hp.append(v); h.append(hp);
-    const st = $("div"); st.append("التوصية: ", $("span", "pill p-warn", "انتظر"), $("span", "pill p-lbl", "فرضية")); h.append(st);
-    h.append($("div", "src", "لا توصية فعلية بعد: وحدة التوصية لم تُبنَ، ولم تُختبر أي قاعدة خارج العينة. الافتراضي هو الانتظار."));
+    const rx = find(c, r => /^recommendation\./.test(r.id))[0], sv = rx ? rx.r.value : null, st = $("div"); st.append("التوصية: ", $("span", "pill " + (sv && sv.stance !== "wait" ? "p-ok" : "p-warn"), sv ? STANCEAR[sv.stance] : "انتظر"), $("span", "pill p-lbl", "فرضية"));
+    if (sv && !sv.edge.proven) st.append($("span", "pill p-bad", "لا ميزة مثبتة")); h.append(st);
+    h.append($("div", "src", sv ? "الافتراضي هو الانتظار حتى تثبت قاعدة ميزتها خارج العينة بعد الرسوم. التفاصيل والأسباب في قسم التوصية." : "لا توصية متاحة الآن."));
     h.append($("div", "src", "حالة النظام: " + modOk + " من " + modAll + " وحدات سليمة | عمر البيانات المحفوظة " + ageH(meta.generated_at).toFixed(1) + " ساعة"));
     return h;
   }
@@ -449,7 +481,6 @@ async function main() {
         if (key === "price") { main.append(LIVEBOX, OBBOX); renderLive(); renderOb(); }
         main.append(section(title, oneLine(key, t), items.map(x => recCard(x.m, x.r, t)), key === "levels" || key === "price"));
       }
-      main.append(placeholder("التوصية والمنطقة وإبطال الفكرة", "ستظهر هنا: الموقف (شراء/بيع/انتظار) مع الأسباب (الأخبار أولا ثم المستويات والتدفق وبروفايل الحجم والمؤشرات)، منطقة الدخول، مستوى إبطال الفكرة، المخاطرة، وخطط أ/ب/ج. لم تُبنَ بعد."));
     } else {
       const h = $("div", "head"); h.append($("h2", null, "حالة النظام"));
       h.append($("div", "src", "آخر تحديث للبيانات: ")); h.lastChild.append(timeEl(Date.parse(meta.generated_at)));

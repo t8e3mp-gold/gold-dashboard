@@ -1,0 +1,17 @@
+{
+  "id": "recommendation",
+  "name_ar": "التوصية: الموقف والمنطقة وإبطال الفكرة (فرضية، عرض فقط)",
+  "name_en": "Recommendation (hypothesis, display only)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["levels", "news", "backtest", "klines"],
+  "outputs": [{"id": "recommendation", "schema": "schema/recommendation.schema.json"}],
+  "label": "hypothesis",
+  "source": {"name": "levels, news and backtest modules (computed rules, no AI)", "url": "https://github.com/t8e3mp-gold/gold-dashboard/blob/main/docs/RECOMMENDATION_RULES.md"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 60,
+  "view": {"tab": "modules", "title": "التوصية", "type": "text"}
+}

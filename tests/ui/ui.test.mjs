@@ -38,7 +38,7 @@ ok(cards.every(t => t.includes("المصدر") && t.includes("الوقت") && t.
 ok(!X.overflow, "no horizontal overflow at 390px in any tab (all sections open)");
 ok(X.wrap, "timestamps do not wrap");
 ok(await p.$eval("#banner", e => e.hidden), "no banner when data is fresh");
-ok(cards.length >= 51, "all 51 cards are reachable through the tabs (" + cards.length + ")");
+ok(cards.length >= 55, "all 55 cards are reachable through the tabs (" + cards.length + ")");
 ok(await p.$$eval("nav button", bs => bs.map(b => b.innerText).join(",") === "XAUT,ETH,SOL,BNB,النظام"), "tab row: XAUT, ETH, SOL, BNB, then system");
 const pc = cards.filter(t => t.startsWith("سعر "));
 ok(pc.length === 4 && pc.every(t => t.includes("مطابقة") || t.includes("مصدر واحد")), "4 price cards, each shows a cross-check or a single-source warning");
@@ -170,5 +170,15 @@ async function obCase(o) {
   ok(/الإصدار الرسمي تأكيد وليس أول إشارة/.test(txt), "official release is confirmation rule stated");
   ok(!/Al Jazeera RSS, Federal Reserve/.test(txt), "news source name translated");
   const hl = await q.evaluate(() => document.querySelectorAll(".card a[href^=http]").length); ok(hl >= 8, "headlines are links (" + hl + ")");
+  await ctx.close(); }
+// recommendation (R5): stance, reasons with numbers, conditional plans, A/B/C, honest gate; header uses it
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" }); const q = await ctx.newPage(); await q.goto(base); await q.waitForSelector(".card");
+  const txt = await q.evaluate(() => { document.querySelectorAll("details.sec").forEach(d => d.open = true); return document.body.innerText; });
+  ok(/التوصية والمنطقة وإبطال الفكرة \(فرضية\)/.test(txt), "recommendation section present");
+  ok(/لا ميزة مثبتة/.test(txt) && /الأسباب \(بالترتيب\)/.test(txt), "no-edge gate and reasons shown");
+  ok(/خطة شراء مشروطة \(ليست توصية\)/.test(txt) && /إبطال الفكرة: تحت/.test(txt), "conditional buy plan with invalidation shown");
+  ok(/أ: انتظر/.test(txt) && /ب: /.test(txt) && /ج: /.test(txt), "plans A/B/C shown");
+  ok(!/لم تُبنَ بعد|لم يُبنَ بعد/.test(txt), "no 'not built yet' placeholders remain");
+  ok(!/وحدات المستويات والأخبار والاختبار الرجعي \(computed|computed rules/.test(txt), "recommendation source translated");
   await ctx.close(); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

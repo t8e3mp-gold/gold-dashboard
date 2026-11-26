@@ -18,6 +18,10 @@ class T(unittest.TestCase):
     def test_fomc(self):   # March 18 14:00 EDT = 18:00 UTC ; January 27 2027 14:00 EST = 19:00 UTC ; hour is assumed
         f = run.parse_fomc(FOMC, datetime(2026, 11, 26, tzinfo=timezone.utc))
         self.assertEqual([x["start"] for x in f], ["2026-03-18T18:00:00Z", "2027-01-27T19:00:00Z"]); self.assertTrue(f[0]["time_assumed"])
+    def test_calendar_only_verified(self):
+        import json, tempfile
+        p = tempfile.mktemp(); json.dump({"checked": "2026-11-26", "events": [{"title": "CPI", "date": "2026-12-10", "time_et": "08:30", "verified": True, "source": "u"}, {"title": "PCE", "date": "2027-01-29", "time_et": "08:30", "verified": False, "source": "u"}]}, open(p, "w"))
+        e = run.load_calendar(p); self.assertEqual(len(e), 1); self.assertEqual(e[0]["start"], "2026-12-10T13:30:00Z")   # 08:30 EST = 13:30 UTC
     def test_wait_window_and_leak(self):
         now = datetime(2026, 12, 23, 12, 0, tzinfo=timezone.utc); ev = [{"title": "PCE", "start": "2026-12-23T13:30:00Z"}]   # 1.5h ahead
         flat = K([100] * 30); s = run.stance(now, ev, flat)

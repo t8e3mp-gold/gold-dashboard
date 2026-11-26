@@ -61,3 +61,5 @@ Likelihood / impact: L = low, M = medium, H = high. "Fixed now" says what is don
 - G27 FOMC statement hour (14:00 New York) is not on the Fed page; it is assumed and marked as assumed. Status: mitigated.
 - G28 Headlines are shown as published and are not scored. The leak/trap flag is a simple rule (event within 2 h and a 2-candle move of 2 ATR or more), untested on history. Status: hypothesis.
 - G29 Feeds were reached from my machine; they must also work from the GitHub runner. The page names any feed that failed in the last refresh. Status: verify on first live refresh.
+- G30 Recommendation: all 4 coins are "wait / no proven edge" because no backtested rule cleared the gate (100+ out-of-sample trades and positive net after fees). Reward to risk after fees is below 1 for every current buy plan. Status: honest, not solved. The page does not claim an edge it does not have.
+- G31 News calendar file (calendar.json) is hand-committed from the calendar agent's checks (BLS blocks automated fetches). Dates need re-checking; the January 2027 PCE date is unverified and left out. Status: mitigated.
