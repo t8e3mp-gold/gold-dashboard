@@ -9,5 +9,5 @@ class T(unittest.TestCase):
     def test_merge_keeps_other_sources_replaces_bls_drops_past(self):
         cal = {"checked": "x", "note": "n", "events": [{"title": "PCE", "date": "2026-12-23", "source": "https://www.bea.gov/x"}, {"title": "old", "date": "2026-11-01", "source": "https://www.bea.gov/x"}, {"title": "US CPI inflation", "date": "2027-01-13", "source": "https://www.bls.gov/cpi"}]}
         m = C.merge(cal, C.parse(ICS, date(2026, 11, 26)), date(2026, 11, 26))
-        self.assertEqual([e["date"] for e in m["events"]], ["2026-12-04", "2026-12-10", "2026-12-23"]); self.assertEqual(m["checked"], "2026-11-26")
+        self.assertEqual([e["date"] for e in m["events"]], ["2026-12-04", "2026-12-10", "2026-12-23", "2027-01-13"]); self.assertEqual(m["checked"], "2026-11-26")
 if __name__ == "__main__": unittest.main()

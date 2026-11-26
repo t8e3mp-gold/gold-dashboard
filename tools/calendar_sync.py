@@ -32,7 +32,8 @@ def parse(ics, today):
 
 def merge(cal, new, today):
     """Keep non-BLS events that are still in the future; replace BLS ones with the fresh list. Returns new calendar dict."""
-    keep = [e for e in cal["events"] if "bls.gov" not in e.get("source", "") and e["date"] >= today.isoformat()]
+    last = max((e["date"] for e in new), default=today.isoformat())   # the feed is authoritative up to its last date; later old BLS dates are kept
+    keep = [e for e in cal["events"] if e["date"] >= today.isoformat() and ("bls.gov" not in e.get("source", "") or e["date"] > last)]
     cal = dict(cal); cal["events"] = sorted(keep + new, key=lambda e: (e["date"], e["title"])); cal["checked"] = today.isoformat()
     cal["note"] = "BLS events refreshed automatically from the BLS iCal feed by tools/calendar_sync.py on " + today.isoformat() + "; other events as committed. 08:30 America/New_York."
     return cal
