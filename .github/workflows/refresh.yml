@@ -1,6 +1,6 @@
 name: Refresh data
 on:
-  schedule: [{cron: "17 5 * * *"}, {cron: "47 3,9,15,21 * * *"}]
+  schedule: [{cron: "17 */3 * * *"}]   # every 3 hours on its own; session wakes add extra runs
   workflow_dispatch:
     inputs:
       drill:
@@ -21,6 +21,9 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Tests first
         run: python -m unittest discover -s tests
+      - name: Self-refresh the economic calendar (BLS iCal; leaves the file unchanged if BLS refuses)
+        continue-on-error: true
+        run: python tools/calendar_sync.py
       - name: Run modules (invalid output is never published; one failure does not block the others)
         id: run
         continue-on-error: true
@@ -33,7 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
+          git add data modules/news/calendar.json
           git diff --cached --quiet || git commit -m "Data refresh $(date -u +%F)"
           git status --short
           git pull --rebase --autostash origin main
