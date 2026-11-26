@@ -7,7 +7,7 @@
   "inputs": [],
   "outputs": [{"id": "backtest", "schema": "schema/backtest.schema.json"}],
   "label": "simulated",
-  "source": {"name": "Binance public klines backtest (run by this repo)", "url": "https://data-api.binance.vision/api/v3/klines"},
+  "source": {"name": "Binance public klines history (downloaded earlier); backtest results saved in this repo, not fetched live", "url": "https://data-api.binance.vision/api/v3/klines"},
   "max_age_hours": 720,
   "schedule": "daily",
   "run": ["python", "run.py"],
