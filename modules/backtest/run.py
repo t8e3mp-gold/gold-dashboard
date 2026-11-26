@@ -13,7 +13,7 @@ def build(res):
                      "value": {"strategies": r["strategies"], "names": res["strategies"]},
                      "stats": {"candles": r["candles"], "from": r["from"], "to": r["to"], "split": res["split"], "fee_per_side": res["fee_per_side"],
                                "slippage_per_side": res["slippage_per_side"], "exit_grid": res["exit_grid"], "stop_rule": res["stop_rule"]},
-                     "source": {"name": "Binance public klines backtest (run by this repo)", "url": "https://data-api.binance.vision/api/v3/klines"},
+                     "source": {"name": "Binance public klines history (downloaded earlier); backtest results saved in this repo, not fetched live", "url": "https://data-api.binance.vision/api/v3/klines"},
                      "fetched_at": res["generated_at"], "label": "simulated", "max_age_hours": 720, "checked_against": None})
     return {"meta": {"module": "backtest", "version": "1.0.0"}, "records": recs}
 
