@@ -3,7 +3,7 @@ Rule under test ("support bounce"): a candle wicks into a confirmed support zone
 Entry = next candle open. Exit = take-profit, stop, or time stop. Fees and slippage are charged. One position at a time.
 No look-ahead: a swing low at candle i is only known from candle i+K. Parameters are picked on the first 60% of time only and
 reported on the last 40% (out-of-sample). The baseline enters whenever flat, with the same exits, to show whether levels add anything."""
-import json, math, sys, time, urllib.request
+import json, math, os, sys, time, urllib.request
 K, LOOKBACK, MERGE = 5, 300, 0.002
 FEE, SLIP = 0.001, 0.0005          # per side
 RT = 2 * (FEE + SLIP)              # round trip cost fraction
@@ -139,4 +139,4 @@ if __name__ == "__main__":
            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "source": "https://data-api.binance.vision/api/v3/klines", "symbols": {}}
     for s in syms:
         c = fetch(s, 0 if s.startswith("XAUT") else two_years); out["symbols"][s] = run_symbol(s, c); print(s, len(c), file=sys.stderr)
-    json.dump(out, open("/tmp/hist/r2.json", "w"), indent=1)
+    json.dump(out, open(os.environ.get("R1_OUT", "/tmp/hist/r2.json"), "w"), indent=1)

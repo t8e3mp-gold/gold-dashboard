@@ -94,3 +94,11 @@ Review of what exists (checked today): module tests pass for news, recommendatio
 - Overfitting by testing many rules: the best-of-24 setting is judged on the held-out 40%. Residual: repeated looks at the same held-out data. Fix: the forward log is the real out-of-sample test; trust it over R1.
 - The user reads "wait" as a bug or reads a conditional plan as advice: labels say hypothesis and "not a recommendation". Fix: keep wording; the decision and the Sharia ruling stay his.
 - Public repo leak of private data: scan.py runs on every push (clean today). Fix: keep it mandatory.
+
+### Autonomy fixes (user's standing rule Nov 26: the project runs itself, manual steps near zero)
+- A1 CORRECTION to R4 above: klines already had automatic fallback (Binance mirror, then OKX, then Gate.io, with cross-check). The "no fallback" claim was wrong. Nothing to build.
+- A2 Refresh runs by itself every 3 hours (GitHub cron `17 */3 * * *`), no longer daily. Instinct session wakes remain as extra runs, not as the only trigger. Status: built; proof = scheduled runs seen.
+- A3 Backtest re-runs by itself weekly (workflow Backtest, Sunday 03:41 UTC, Binance public data). Results are committed only if tools/backtest_check.py passes (4 coins, enough candles, out-of-sample present), then Refresh is dispatched so the recommendation uses them. Failure keeps the old results and turns the run red. Status: built; proof = first run.
+- A4 Calendar self-refresh: tools/calendar_sync.py tries the free BLS iCal feed on every Refresh and rewrites only BLS jobs/CPI events. The iCal layout is an ASSUMPTION and BLS returned 403 from here, so it is unproven from the runner. If BLS refuses, the committed file stays (Plan B) and the watchdog flags it after 40 days. Plan C: calendar agent re-check monthly. Status: mitigated, not solved until a run shows "updated".
+- A5 Self-heal and alert: the Watchdog (every 6h) now dispatches Refresh itself if data is older than 6h, and goes red (GitHub emails the owner) on: data older than 26h, a failed module, a site behind the repo, a failed scheduled refresh, calendar file older than 40 days, backtest older than 21 days. Status: built.
+- A6 Forward-log monthly split: NOT built yet (file is small until it passes about 1 MB; trigger written in F1).
