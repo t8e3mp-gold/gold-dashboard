@@ -12,6 +12,7 @@ PATTERNS = {
     "phone": re.compile(r"(?<![\d.])\+?\d{1,3}[ -]?\(?\d{2,4}\)?[ -]?\d{3,4}[ -]?\d{3,4}(?![\d.])"),
 }
 ALLOW_EMAIL = re.compile(r"(@users\.noreply\.github\.com|@example\.(com|org)|@t8e3mp-gold)$|^git@")
+ACTION_PIN = re.compile(r"^\s*(-\s*)?uses:\s*[\w.-]+/[\w./-]+@[0-9a-f]{40}(\s+#.*)?\s*$")
 SKIP_DIRS = {".git", "node_modules", "__pycache__"}
 SKIP_FILES = {"scan.py", "test_scan.py", "package-lock.json"}
 TEXT = (".py", ".js", ".mjs", ".json", ".md", ".yml", ".yaml", ".html", ".css", ".txt", ".sh", ".tsx", ".ts")
@@ -23,6 +24,8 @@ def scan_text(name, text):
             s = m.group(0)
             if kind == "email" and ALLOW_EMAIL.search(s):
                 continue
+            if kind == "long-secret" and len(s) == 40 and ACTION_PIN.search(text[text.rfind("\n", 0, m.start()) + 1:text.find("\n", m.end()) if text.find("\n", m.end()) != -1 else len(text)]):
+                continue  # a commit SHA pinning a GitHub Action is public, not a secret
             if kind == "phone":
                 digits = re.sub(r"\D", "", s)
                 if len(digits) < 10 or re.fullmatch(r"20\d{2}[-\d ]*", s.strip()) or not (s.startswith("+") or " " in s or "-" in s):
