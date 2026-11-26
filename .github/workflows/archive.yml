@@ -1,0 +1,36 @@
+name: Archive forward log
+# Monthly split of the forward log: records older than 45 days move to data/archive/ (append-only), counters stay in data/forward-archive.json,
+# and docs/FORWARD_PATTERNS.md is rebuilt from archive plus live window. Manual run: Actions > Archive forward log > Run workflow.
+on:
+  schedule: [{cron: "23 4 1 * *"}]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency: refresh
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Tests first
+        run: python -m unittest discover -s tests
+      - name: Move old records to the monthly archive
+        run: python tools/archive_logs.py data
+      - name: Rebuild the patterns file
+        run: python tools/patterns.py data docs/FORWARD_PATTERNS.md
+      - name: Scan for secrets and personal data
+        run: python tools/scan.py data && python tools/scan.py docs
+      - name: Commit
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs
+          git diff --cached --quiet || git commit -m "Forward log archive $(date -u +%F)"
+          git pull --rebase --autostash origin main
+          git push
+          gh workflow run refresh.yml
