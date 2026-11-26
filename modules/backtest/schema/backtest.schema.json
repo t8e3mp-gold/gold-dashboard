@@ -1,0 +1,4 @@
+{"type": "object", "required": ["meta", "records"],
+ "properties": {"records": {"type": "array", "minItems": 4, "maxItems": 4,
+   "items": {"type": "object", "required": ["value", "stats", "label"], "properties": {"label": {"const": "simulated"},
+     "value": {"type": "object", "required": ["strategies"]}}}}}}

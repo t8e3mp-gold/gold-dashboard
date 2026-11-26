@@ -22,4 +22,15 @@ class T(unittest.TestCase):
         self.assertTrue(all(t >= 10 + r1.K for t, _ in sg))
     def test_wilson(self):
         lo, hi = r1.wilson(50, 100); self.assertLess(lo, 0.5); self.assertGreater(hi, 0.5)
+    def test_tranche(self):  # entry 100, tp 2% -> half at 101, stop to entry, rest at 102
+        c = [C(100, 100, 100, 100), C(100, 100, 100, 100), C(100, 101.2, 99.9, 101), C(101, 102.5, 100.5, 102)]
+        tr = r1.simulate(c, [(0, 0)], 0.02, 0.05, 5, 0, 4, True)
+        self.assertAlmostEqual(tr[0], 0.5 * 0.01 + 0.5 * 0.02 - r1.RT, 9)
+    def test_tranche_breakeven_stop(self):  # half at +1%, then price falls to entry -> rest exits at entry
+        c = [C(100, 100, 100, 100), C(100, 100, 100, 100), C(100, 101.2, 99.9, 100.5), C(100.5, 100.6, 99.0, 99.5)]
+        tr = r1.simulate(c, [(0, 0)], 0.02, 0.05, 5, 0, 4, True)
+        self.assertAlmostEqual(tr[0], 0.5 * 0.01 + 0.5 * 0.0 - r1.RT, 9)
+    def test_rsi_all_up_is_100(self):
+        c = [C(i, i, i, i + 1) for i in range(1, 40)]
+        self.assertEqual(r1.rsi_series(c)[-1], 100.0)
 if __name__ == "__main__": unittest.main()

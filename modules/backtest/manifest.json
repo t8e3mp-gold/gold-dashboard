@@ -1,0 +1,17 @@
+{
+  "id": "backtest",
+  "name_ar": "الاختبار الرجعي (محاكاة): قواعد الدعم وRSI وبولينجر",
+  "name_en": "Backtest (simulated)",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": [],
+  "outputs": [{"id": "backtest", "schema": "schema/backtest.schema.json"}],
+  "label": "simulated",
+  "source": {"name": "Binance public klines backtest (run by this repo)", "url": "https://data-api.binance.vision/api/v3/klines"},
+  "max_age_hours": 720,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 30,
+  "view": {"tab": "modules", "title": "الاختبار الرجعي", "type": "table"}
+}

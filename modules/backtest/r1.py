@@ -49,18 +49,23 @@ def signals(c, min_touch):
             if n >= min_touch and lo <= zhi * 1.001 and cl > zhi * 1.001 and lo >= zlo * 0.995: out.append((t, zlo)); break
     return out
 
-def simulate(c, sigs, tp, sl_pct, hold, lo_i, hi_i):
-    """sigs: list of (t, zone_lo) or None for baseline (enter whenever flat). Returns list of net returns."""
+def simulate(c, sigs, tp, sl_pct, hold, lo_i, hi_i, tranche=False):
+    """sigs: list of (t, zone_lo) or None for baseline (enter whenever flat). tranche=True: sell half at tp/2, stop of the rest moves to entry,
+    sell the rest at tp. Returns list of net returns (fees and slippage charged on each sold part). Same-candle stop and target: stop counts."""
     trades = []; t = lo_i; sg = {s[0]: s for s in sigs} if sigs is not None else None
     while t < hi_i - 1:
         if sg is not None and t not in sg: t += 1; continue
-        e = t + 1; entry = c[e][1]; stop = entry * (1 - sl_pct); target = entry * (1 + tp); exit_p = None; x = e
+        e = t + 1; entry = c[e][1]; stop = entry * (1 - sl_pct); t1 = entry * (1 + tp / 2); t2 = entry * (1 + tp)
+        got = 0.0; left = 1.0; x = e; closed = False
         for x in range(e, min(e + hold, hi_i)):
             o, h, l, cl = c[x][1:5]
-            if l <= stop: exit_p = min(o, stop); break
-            if h >= target: exit_p = max(o, target) if o >= target else target; break
-        if exit_p is None: exit_p = c[x][4]
-        trades.append(exit_p / entry - 1 - RT); t = x + 1
+            if l <= stop: got += left * (min(o, stop) / entry - 1); left = 0; closed = True; break
+            if tranche and left == 1.0 and h >= t1:
+                got += 0.5 * (max(o, t1) / entry - 1); left = 0.5; stop = max(stop, entry)
+            if h >= t2:
+                got += left * (max(o, t2) / entry - 1); left = 0; closed = True; break
+        if not closed: got += left * (c[x][4] / entry - 1)
+        trades.append(got - RT); t = x + 1
     return trades
 
 def wilson(w, n, z=1.96):
@@ -76,32 +81,62 @@ def stats(tr):
     return {"trades": n, "win_rate": round(w / n, 4), "win_rate_ci95": wilson(w, n), "avg_net_per_trade_pct": round(100 * sum(tr) / n, 4),
             "total_net_pct": round(100 * (eq - 1), 2), "max_drawdown_pct": round(100 * dd, 2)}
 
-GRID = [(tp, sl, 48, mt) for tp in (0.005, 0.01, 0.015, 0.02) for sl in (0.01, 0.02, 0.04) for mt in (1, 2)]
 
-def run_symbol(sym, c, split=0.6):
-    cut = int(len(c) * split); res = {"candles": len(c), "from": c[0][0], "to": c[-1][0], "split_index": cut, "grid": []}
-    sig_cache = {mt: signals(c, mt) for mt in (1, 2)}
-    best = None
-    for tp, sl, hold, mt in GRID:
-        ins = [s for s in sig_cache[mt] if s[0] < cut]
-        tr = simulate(c, ins, tp, sl, hold, 0, cut); st = stats(tr); row = {"tp": tp, "sl": sl, "min_touch": mt, "in_sample": st}
-        res["grid"].append(row)
-        if st["trades"] >= 20 and (best is None or st["avg_net_per_trade_pct"] > best[1]["in_sample"]["avg_net_per_trade_pct"]): best = (None, row)
-    res["grid_size"] = len(GRID)
-    if best:
-        row = best[1]; tp, sl, mt = row["tp"], row["sl"], row["min_touch"]
-        oos_sig = [s for s in sig_cache[mt] if s[0] >= cut]
-        res["chosen_in_sample"] = {k: row[k] for k in ("tp", "sl", "min_touch", "in_sample")}
-        res["out_of_sample_levels"] = stats(simulate(c, oos_sig, tp, sl, 48, cut, len(c)))
-        res["out_of_sample_baseline_same_exits"] = stats(simulate(c, None, tp, sl, 48, cut, len(c)))
-        res["in_sample_baseline_same_exits"] = stats(simulate(c, None, tp, sl, 48, 0, cut))
-    else: res["chosen_in_sample"] = None
+def rsi_series(c, n=14):
+    r = [None] * len(c); g = l = 0.0
+    for i in range(1, len(c)):
+        d = c[i][4] - c[i - 1][4]; up, dn = max(d, 0), max(-d, 0)
+        if i <= n: g += up / n; l += dn / n
+        else: g = (g * (n - 1) + up) / n; l = (l * (n - 1) + dn) / n
+        if i >= n: r[i] = 100.0 if l == 0 else 100 - 100 / (1 + g / l)
+    return r
+
+def sig_rsi(c, thr):
+    r = rsi_series(c); return [(t, 0) for t in range(1, len(c)) if r[t - 1] is not None and r[t] is not None and r[t - 1] < thr <= r[t]]
+
+def sig_boll(c, n=20, k=2.0):
+    out = []; prev_below = False
+    for t in range(n, len(c)):
+        w = [x[4] for x in c[t - n + 1:t + 1]]; m = sum(w) / n; sd = (sum((x - m) ** 2 for x in w) / n) ** 0.5
+        below = c[t][4] < m - k * sd
+        if prev_below and not below and c[t][4] < m: out.append((t, 0))
+        prev_below = below
+    return out
+
+def sig_support(c, mt): return signals(c, mt)
+
+STRATS = {
+    "support_bounce": {"name_ar": "ارتداد من دعم", "params": [{"mt": m} for m in (1, 2)], "gen": lambda c, p: signals(c, p["mt"])},
+    "strict_support": {"name_ar": "دعم مشدد (3 لمسات فأكثر)", "params": [{"mt": 3}], "gen": lambda c, p: signals(c, p["mt"])},
+    "rsi_oversold": {"name_ar": "RSI يعود فوق حد التشبع", "params": [{"thr": t} for t in (25, 30, 35)], "gen": lambda c, p: sig_rsi(c, p["thr"])},
+    "bollinger_reclaim": {"name_ar": "عودة داخل نطاق بولينجر", "params": [{}], "gen": lambda c, p: sig_boll(c)},
+}
+EXITS = [(tp, sl, 48, tr) for tp in (0.005, 0.01, 0.015, 0.02) for sl in (0.01, 0.02, 0.04) for tr in (False, True)]
+
+def run_strategy(c, strat, split=0.6):
+    cut = int(len(c) * split); cands = []
+    for p in strat["params"]:
+        sigs = strat["gen"](c, p); ins = [x for x in sigs if x[0] < cut]
+        for tp, sl, hold, tr in EXITS:
+            st = stats(simulate(c, ins, tp, sl, hold, 0, cut, tr)); cands.append((p, sigs, tp, sl, hold, tr, st))
+    ok = [x for x in cands if x[6]["trades"] >= 20]
+    res = {"tested_in_sample": len(cands)}
+    if not ok: res["chosen"] = None; return res
+    p, sigs, tp, sl, hold, tr, st = max(ok, key=lambda x: x[6]["avg_net_per_trade_pct"])
+    oos = [x for x in sigs if x[0] >= cut]
+    res["chosen"] = {"params": p, "tp": tp, "sl": sl, "tranche": tr, "in_sample": st}
+    res["out_of_sample"] = stats(simulate(c, oos, tp, sl, hold, cut, len(c), tr))
+    res["baseline_oos_same_exits"] = stats(simulate(c, None, tp, sl, hold, cut, len(c), tr))
     return res
+
+def run_symbol(sym, c):
+    return {"candles": len(c), "from": c[0][0], "to": c[-1][0], "strategies": {k: run_strategy(c, v) for k, v in STRATS.items()}}
 
 if __name__ == "__main__":
     syms = sys.argv[1:] or ["XAUTUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT"]; two_years = int((time.time() - 2 * 365 * 86400) * 1000)
-    out = {"label": "simulated", "rule": "support bounce, long only, spot", "fee_per_side": FEE, "slippage_per_side": SLIP, "split": 0.6,
+    out = {"label": "simulated", "fee_per_side": FEE, "slippage_per_side": SLIP, "split": 0.6, "stop_rule": "same candle touching stop and target counts as stop",
+           "strategies": {k: v["name_ar"] for k, v in STRATS.items()}, "exit_grid": "take-profit 0.5/1/1.5/2%, stop 1/2/4%, single or two-tranche (half at half target, stop to entry), 48h time stop",
            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "source": "https://data-api.binance.vision/api/v3/klines", "symbols": {}}
     for s in syms:
         c = fetch(s, 0 if s.startswith("XAUT") else two_years); out["symbols"][s] = run_symbol(s, c); print(s, len(c), file=sys.stderr)
-    json.dump(out, open("/tmp/hist/r1.json", "w"), indent=1)
+    json.dump(out, open("/tmp/hist/r2.json", "w"), indent=1)

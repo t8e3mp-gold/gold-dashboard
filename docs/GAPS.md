@@ -50,3 +50,10 @@ Likelihood / impact: L = low, M = medium, H = high. "Fixed now" says what is don
 | P17 | Policy and cost | A free tier changes or a service asks for a card | Feature stops | L / M | Free tools only; no accounts beyond the repo | Swap the host (static files work on any host) | Run from the phone | Open, low |
 | P18 | Agent side | My run time or context limit cuts a push half-way | Half-done work | M / M | Work in /downloads/gd2 with docs; bundle pushes are atomic; keeper unaffected | Continue from the docs and the wake prompt | n/a | Mitigated |
 | P19 | Privacy | A secret, email or address lands in the public repo | Public leak | L / H | scan.py before every push; noreply author | Rotate and rewrite history | n/a | Mitigated |
+
+## Levels and backtest (added Nov 26)
+- G21 Levels are hypotheses: zones come from past data with small samples (3-9 touches). The backtest (docs/BACKTEST_R1.md) found no positive edge after fees. Status: mitigated by labels and by showing the samples; not solved.
+- G22 "Bounce" in levels means price moved at least one ATR away within 6 candles. That is a description of the past, not a prediction. Status: mitigated (disclosed).
+- G23 Backtest uses 1h candles only. Order-book walls and intent signals have no history, so they are untested. Status: open (needs the forward log R6).
+- G24 Backtest tests 4 rules x up to 3 settings x 24 exits on the first 60% and reports the best on the last 40%. More rules tried means more chance of a lucky result. All were negative, so this did not flatter the result. Status: mitigated.
+- G25 Backtest results are a committed file rebuilt by running modules/backtest/r1.py (needs network), not on every refresh. The page shows the run time. Status: mitigated.

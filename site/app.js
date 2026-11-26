@@ -1,5 +1,5 @@
 "use strict";
-const APP_VERSION = 15; // bump when the page code changes; data files carry the version they expect
+const APP_VERSION = 16; // bump when the page code changes; data files carry the version they expect
 // All data is rendered with textContent only. No HTML from data files is ever injected.
 const LABELS = {measured:"مقاس", simulated:"محاكاة", live:"حي", hypothesis:"فرضية", ai:"ذكاء اصطناعي"};
 const $ = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
@@ -12,7 +12,7 @@ const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
 const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
 function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
 function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
-const arSrc = t => String(t).replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
+const arSrc = t => String(t).replace(/Binance public klines backtest \(run by this repo\)/g, "اختبار رجعي على شموع باينانس العامة (من هذا المستودع)").replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -171,6 +171,24 @@ function levelsView(rec, sym) {
 }
 window.__levelPick = levelPick;
 
+function backtestView(rec) {
+  const w = $("div"), v = rec.value, st = rec.stats, pc = x => (x * 100).toFixed(1) + "%", sg = x => (x > 0 ? "+" : "") + x.toFixed(2) + "%";
+  w.append($("div", "src", "محاكاة على بيانات الماضي (شراء فقط، سبوت، رسوم وانزلاق " + (st.fee_per_side * 100 + st.slippage_per_side * 100).toFixed(2) + "% لكل جانب). الاختيار على أول " + Math.round(st.split * 100) + "% من الوقت والقياس على الباقي (خارج العينة). فرضية وليست توصية."));
+  w.append($("div", "src", "عدد الشموع: " + st.candles + " (ساعة) من " + cairoStr(st.from) + " إلى " + cairoStr(st.to) + " بتوقيت القاهرة."));
+  let any = false;
+  Object.entries(v.strategies).forEach(([k, r]) => {
+    const o = r.out_of_sample, b = r.baseline_oos_same_exits, d = $("div", "lvl"); d.append($("b", null, (v.names[k] || k) + ": "));
+    if (!o || !o.trades) { d.append("لا صفقات كافية للاختيار"); w.append(d); return; }
+    const pos = o.avg_net_per_trade_pct > 0; any = any || pos;
+    d.style.borderInlineStartColor = pos ? "#2ea043" : "#e5534b"; d.style.borderInlineStartWidth = "4px";
+    d.append("صفقات " + o.trades + " | نسبة النجاح " + pc(o.win_rate) + " (نطاق 95%: " + pc(o.win_rate_ci95[0]) + " إلى " + pc(o.win_rate_ci95[1]) + ") | صافي الصفقة بعد الرسوم " + sg(o.avg_net_per_trade_pct) + " | أقصى سحب " + o.max_drawdown_pct + "% | بدون مستويات (نفس الخروج) " + sg(b.avg_net_per_trade_pct));
+    const e = $("div", "src", "خروج مختار: هدف " + (r.chosen.tp * 100) + "%، وقف " + (r.chosen.sl * 100) + "%" + (r.chosen.tranche ? "، شريحتان" : "") + " | صافي داخل العينة " + sg(r.chosen.in_sample.avg_net_per_trade_pct) + " على " + r.chosen.in_sample.trades + " صفقة");
+    d.append(e); w.append(d);
+  });
+  const mx = Math.max(...Object.values(v.strategies).map(r => r.out_of_sample ? r.out_of_sample.trades : 0));
+  w.append($("div", "src", any ? "بعض القواعد موجبة خارج العينة: لا تُعتبر مثبتة قبل عينة أكبر." : "لا قاعدة موجبة بعد الرسوم خارج العينة. نسبة نجاح عالية مع صافٍ سالب تعني أن الخسائر أكبر من الأرباح. شرطك (98% على 1000+ صفقة وسحب أقل من 20% وصافٍ موجب) غير متحقق؛ أكبر عينة هنا " + mx + " صفقة."));
+  return w;
+}
 function recCard(mod, rec, sym) {
   const c = $("div", "card");
   const ttl = rec.title_ar || (mod.view ? mod.view.title : rec.id);
@@ -181,6 +199,7 @@ function recCard(mod, rec, sym) {
   else if (Array.isArray(rec.value) && /^profile/.test(rec.unit) && rec.stats) c.append(profileView(rec));
   else if (/^intent-size/.test(rec.unit) && rec.stats) c.append(intentSizeView(rec));
   else if (rec.unit === "levels" && rec.value) c.append(levelsView(rec, sym));
+  else if (rec.unit === "backtest" && rec.value) c.append(backtestView(rec));
   else if (/^xcheck/.test(rec.unit) && rec.stats) c.append(xcheckView(rec));
   else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
@@ -369,11 +388,13 @@ async function main() {
     ["flow", "التدفق (دلتا المشترين والبائعين)", r => /^flow\./.test(r.id)],
     ["profile", "بروفايل الحجم", r => /^profile\./.test(r.id)],
     ["intent", "مؤشرات النية (فرضيات)", r => /^intent\./.test(r.id)],
+    ["tests", "الاختبارات الرجعية (محاكاة)", r => /^backtest\./.test(r.id)],
   ];
   const find = (c, f) => all.filter(x => x.r && coinOf(x.r) === c && f(x.r));
   const fx = n => Number(Number(n).toPrecision(6)).toString();
   function oneLine(key, c) {
-    const L = {levels: () => { const x = find(c, r => /^levels\./.test(r.id))[0]; if (!x) return ""; const pk = levelPick(x.r.value.zones, x.r.value.price_ref), f = n => Number(Number(n).toPrecision(7)); return "أقرب دعم " + (pk.sup1 ? f(pk.sup1.mid) : "-") + " | أقرب مقاومة " + (pk.res1 ? f(pk.res1.mid) : "-"); },
+    const L = {tests: () => { const x = find(c, r => /^backtest\./.test(r.id))[0]; if (!x) return ""; const p = Object.values(x.r.value.strategies).filter(r => r.out_of_sample && r.out_of_sample.trades); const pos = p.filter(r => r.out_of_sample.avg_net_per_trade_pct > 0).length; return pos + " من " + p.length + " قواعد موجبة خارج العينة"; },
+      levels: () => { const x = find(c, r => /^levels\./.test(r.id))[0]; if (!x) return ""; const pk = levelPick(x.r.value.zones, x.r.value.price_ref), f = n => Number(Number(n).toPrecision(7)); return "أقرب دعم " + (pk.sup1 ? f(pk.sup1.mid) : "-") + " | أقرب مقاومة " + (pk.res1 ? f(pk.res1.mid) : "-"); },
       kline: () => { const x = find(c, r => /^kline\..*\.1h$/.test(r.id))[0]; return x ? "آخر إغلاق ساعة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
       flow: () => { const x = find(c, r => /^flow\..*\.1h$/.test(r.id))[0]; return x ? "صافي آخر ساعة مغلقة: " + fx(x.r.value[x.r.value.length - 1][4]) : ""; },
       profile: () => { const x = find(c, r => /^profile\..*\.24h$/.test(r.id))[0]; return x ? "أكثر سعر تداولا 24 ساعة: " + fx(x.r.stats.poc) : ""; },
@@ -406,7 +427,6 @@ async function main() {
         main.append(section(title, oneLine(key, t), items.map(x => recCard(x.m, x.r, t)), key === "levels" || key === "price"));
       }
       main.append(placeholder("التوصية والمنطقة وإبطال الفكرة", "ستظهر هنا: الموقف (شراء/بيع/انتظار) مع الأسباب (الأخبار أولا ثم المستويات والتدفق وبروفايل الحجم والمؤشرات)، منطقة الدخول، مستوى إبطال الفكرة، المخاطرة، وخطط أ/ب/ج. لم تُبنَ بعد."));
-      main.append(placeholder("الاختبارات الرجعية والوكيل التجريبي", "لا اختبارات رجعية بعد (مرحلة R1) ولا نتائج من الوكيل التجريبي. لن يُعرض أي رقم نجاح قبل اختباره خارج العينة بعدد صفقات وفترة ثقة."));
     } else {
       const h = $("div", "head"); h.append($("h2", null, "حالة النظام"));
       h.append($("div", "src", "آخر تحديث للبيانات: ")); h.lastChild.append(timeEl(Date.parse(meta.generated_at)));
