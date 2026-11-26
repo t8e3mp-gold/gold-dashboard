@@ -4,11 +4,12 @@
   "name_en": "Forward log",
   "version": "1.0.0",
   "kind": "compute",
-  "inputs": ["recommendation", "klines", "forward-log", "forward-score"],
+  "inputs": ["recommendation", "klines", "forward-log", "forward-score", "forward-archive"],
   "outputs": [
     {"id": "forward-log", "schema": "schema/forward-log.schema.json"},
     {"id": "forward-score", "schema": "schema/forward-score.schema.json"},
-    {"id": "forward-summary", "schema": "schema/forward-summary.schema.json"}
+    {"id": "forward-summary", "schema": "schema/forward-summary.schema.json"},
+    {"id": "forward-archive", "schema": "schema/forward-archive.schema.json"}
   ],
   "history": ["forward-log", "forward-score"],
   "label": "measured",

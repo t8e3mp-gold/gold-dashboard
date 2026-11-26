@@ -103,3 +103,10 @@ Review of what exists (checked today): module tests pass for news, recommendatio
 - A5 Self-heal and alert: the Watchdog (every 6h) now dispatches Refresh itself if data is older than 6h, and goes red (GitHub emails the owner) on: data older than 26h, a failed module, a site behind the repo, a failed scheduled refresh, calendar file older than 40 days, backtest older than 21 days. Status: built.
 - A6 Forward-log monthly split: NOT built yet (file is small until it passes about 1 MB; trigger written in F1).
 - A4 UPDATE (first live run, Nov 26 12:23 Cairo): calendar_sync WORKED from the GitHub runner. BLS iCal was reachable; it updated calendar.json (jobs Dec 4, CPI Dec 10, same as the calendar agent's checks). The feed did not list the Jan 8 and Jan 13 2027 dates, so the first version dropped them. Fixed: old BLS dates later than the feed's last date are kept. Status: automatic, proven once.
+
+## Update 2026-11-26 (monthly split, A6 built)
+| # | Gap / failure mode | Fix | Manual override |
+|---|---|---|---|
+| G35 | Forward log grows without limit and slows the phone page | tools/archive_logs.py moves records older than 45 days to data/archive/ monthly (workflow archive.yml); counters kept in data/forward-archive.json so all-time totals stay right; the page never downloads forward-log, forward-score or forward-archive (HEAVY skip in app.js) | Run "Archive forward log" from the Actions tab; the script is idempotent |
+| G36 | Archive run stops half way | Archive file is written first, counters second, live trim last; re-run skips records already archived | Re-run the workflow |
+| G37 | Patterns read as proof of an edge | docs/FORWARD_PATTERNS.md shows counts only, with "sample too small" under 100 per group | none needed |

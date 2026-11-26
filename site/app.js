@@ -436,8 +436,10 @@ async function main() {
   startOb(null);
   // Load every output once, then group the records by coin (display only; no values are changed).
   const all = [];
+  const HEAVY = ["forward-log", "forward-score", "forward-archive"];   // growing history files: the page only needs the summary
   for (const [id, m] of Object.entries(meta.modules)) {
     for (const o of m.outputs) {
+      if (HEAVY.includes(o)) continue;
       try { const d = await getJSON("data/" + o + ".json"); d.records.forEach(r => all.push({m, r})); }
       catch (e) { all.push({m, err: o}); }
     }

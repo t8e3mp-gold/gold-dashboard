@@ -32,3 +32,40 @@ class T(unittest.TestCase):
               {"value": {"coin": "XAUT", "entry_time": "2026-11-27T11:00:00Z", "buy_status": "no_touch", "net_pct": None}}]
         s = run.summarize("XAUT", [], sc, "t")["value"]; self.assertEqual((s["scored"], s["touched"], s["wins"], s["independent_days"]), (3, 2, 1, 2)); self.assertEqual(s["avg_net_pct"], 1.5)
 if __name__ == "__main__": unittest.main()
+
+import json, tempfile
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "..", "tools"))
+import archive_logs as A
+def rec(coin, t, status="target_first", net=5.0):
+    return {"id": "x." + coin, "fetched_at": t, "value": {"coin": coin, "entry_time": t, "buy_status": status, "net_pct": net, "stance": "wait", "price": 1}}
+class TArchive(unittest.TestCase):
+    def test_archive_moves_old_keeps_new_and_summary_is_all_time(self):
+        now = datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as d:
+            lg = {"meta": {}, "records": [rec("XAUT", "2026-11-01T10:00:00Z"), rec("XAUT", "2026-12-30T10:00:00Z")]}
+            sc = {"meta": {}, "records": [rec("XAUT", "2026-11-01T10:00:00Z", "target_first", 5.0), rec("XAUT", "2026-12-30T10:00:00Z", "invalid_first", -2.4)]}
+            json.dump(lg, open(d + "/forward-log.json", "w")); json.dump(sc, open(d + "/forward-score.json", "w"))
+            r = A.run(d, now); self.assertEqual(r["moved"], 2)
+            self.assertEqual(len(json.load(open(d + "/forward-log.json"))["records"]), 1)
+            self.assertEqual(len(json.load(open(d + "/archive/forward-log-2026-11.json"))["records"]), 1)
+            self.assertEqual(A.run(d, now), {"moved": 0})                      # idempotent: nothing more to move
+            adoc = json.load(open(d + "/forward-archive.json")); arch = adoc["records"][0]["value"]
+            live_log = json.load(open(d + "/forward-log.json"))["records"]; live_sc = json.load(open(d + "/forward-score.json"))["records"]
+            s = run.summarize("XAUT", live_log, live_sc, "t", arch)["value"]
+            self.assertEqual((s["logged"], s["scored"], s["touched"], s["wins"], s["independent_days"]), (2, 2, 2, 1, 2)); self.assertEqual(s["avg_net_pct"], 1.3)
+    def test_rerun_after_partial_failure_does_not_double_count(self):
+        now = datetime(2026, 12, 31, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as d:
+            lg = {"meta": {}, "records": [rec("ETH", "2026-11-01T10:00:00Z")]}; sc = {"meta": {}, "records": []}
+            json.dump(lg, open(d + "/forward-log.json", "w")); json.dump(sc, open(d + "/forward-score.json", "w"))
+            os.makedirs(d + "/archive"); json.dump({"meta": {}, "records": [rec("ETH", "2026-11-01T10:00:00Z")]}, open(d + "/archive/forward-log-2026-11.json", "w"))   # archive already written, live file not yet trimmed
+            A.run(d, now); arch = json.load(open(d + "/forward-archive.json"))["records"][0]["value"]
+            self.assertEqual(arch["coins"]["ETH"]["logged"], 0)  # already in archive: not counted again (it was counted when first archived)
+            self.assertEqual(len(json.load(open(d + "/archive/forward-log-2026-11.json"))["records"]), 1)
+
+import patterns as P
+class TPatterns(unittest.TestCase):
+    def test_table_counts_and_small_sample_note(self):
+        rows = [{"coin": "XAUT", "stance": "wait", "buy_status": "target_first", "net_pct": 5.0, "entry_time": "2026-11-26T10:00:00Z"}, {"coin": "XAUT", "stance": "wait", "buy_status": "no_touch", "net_pct": None, "entry_time": "2026-11-26T11:00:00Z"}]
+        t = P.table(rows, lambda v: v["coin"]); self.assertIn("| XAUT | 2 | 1 | 1 | 5.00 | sample too small to conclude |", t)
+        self.assertIn("No scored entries yet", P.build([], datetime(2026, 12, 1, tzinfo=timezone.utc)))
