@@ -109,6 +109,9 @@ async function liveCase(o) {
   await q.waitForTimeout(10500); ok(hits.binance >= 2, "live: polls again after about 10 s (requests: " + hits.binance + ")"); }
 { const { txt } = await liveCase({ okxMul: { XAUT: 1.02 } }); ok(txt.includes("تحذير فرق"), "live: a 2% source difference raises the warning"); }
 { const { txt } = await liveCase({}); ok(!/Binance|OKX|Gate/.test(txt) && txt.includes("بتوقيت القاهرة") && /UTC \d\d:\d\d:\d\d/.test(txt), "live: Arabic source names, Cairo time with UTC second"); }
+// P9: a source that keeps failing is not hit every 10 s (30 s cool-down); prices still shown from the fallback
+{ const { q, hits, txt } = await liveCase({ binance: "451" }); await q.waitForTimeout(25000); const t2 = await tabsText(q, "#live");
+  ok(hits.binance <= 8 && /XAUT\s*4000/.test(t2), "P9: failing Binance is backed off (" + hits.binance + " requests in ~26 s, ticker plus order book, would be about 15 without back-off); price still shown"); }
 { const { txt } = await liveCase({ binance: "451" }); ok(/XAUT\s*4000/.test(txt) && txt.includes("أو كي إكس") && txt.includes("بديل"), "live: falls back to OKX when Binance answers 451"); }
 { const { txt } = await liveCase({ binance: "zero" }); ok(txt.includes("أو كي إكس") && !/XAUT\s*0\b/.test(txt), "live: a zero price from Binance is rejected"); }
 { const { txt } = await liveCase({ binance: "451", okx: "fail" }); ok(txt.includes("جيت") && /XAUT\s*4000/.test(txt), "live: falls back to Gate.io when Binance and OKX fail"); }
