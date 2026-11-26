@@ -1,0 +1,36 @@
+name: Backtest
+# Re-runs the R1 backtest on its own every week (Binance public data, no account). The new results are committed only if a sanity gate passes;
+# otherwise the old results stay and this run turns red (GitHub emails the owner and the watchdog flags results older than 21 days).
+on:
+  schedule: [{cron: "41 3 * * 0"}]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency: backtest
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with: {ref: main}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Run R1 (simulated, spot, long-only)
+        env: {R1_OUT: /tmp/r1.json}
+        run: python modules/backtest/r1.py
+      - name: Sanity gate
+        run: python tools/backtest_check.py /tmp/r1.json
+      - name: Commit new results
+        env: {GH_TOKEN: "${{ github.token }}"}
+        run: |
+          cp /tmp/r1.json modules/backtest/results.json
+          python tools/scan.py modules/backtest
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/backtest/results.json
+          git diff --cached --quiet || git commit -m "Backtest re-run $(date -u +%F)"
+          git pull --rebase --autostash origin main
+          git push
+          gh workflow run refresh.yml
