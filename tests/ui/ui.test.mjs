@@ -158,7 +158,7 @@ async function obCase(o) {
   ok(/خارج العينة/.test(txt) && /بدون مستويات/.test(txt), "backtest shows out-of-sample and baseline");
   ok(!/لم يُبنَ بعد[^]{0,40}الاختبارات/.test(txt), "no backtest placeholder left");
   const srcs = await q.evaluate(() => [...document.querySelectorAll(".card")].filter(c => /الاختبار الرجعي/.test(c.innerText)).map(c => c.querySelector(".src:last-of-type") ? c.innerText : ""));
-  ok(!/Binance public klines backtest/.test(txt), "backtest source translated to Arabic");
+  ok(!/Binance public klines (backtest|history)/.test(txt) && txt.includes("ما بتتجابش لحظيا"), "backtest source translated to Arabic and says results are saved, not fetched live");
   await ctx.close(); }
 // news section (R4): headlines with Cairo time, scheduled events, wait + possible leak/trap flags (mocked event in window), failed feed warning
 { const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" }); const q = await ctx.newPage();
