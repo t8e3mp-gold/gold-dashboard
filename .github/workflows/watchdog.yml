@@ -6,6 +6,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: write
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -24,7 +25,7 @@ jobs:
           now = datetime.now(timezone.utc); bad = []
           repo = json.load(open("data/meta.json"))
           age = (now - ts(repo["generated_at"])).total_seconds() / 3600
-          if age > 26: bad.append(f"repo data is {age:.1f}h old (limit 26h)")
+          if age > 26: bad.append(f"repo data is {age:.1f}h old (limit 26h)")   # kept; refresh now runs every 3h, so 6h triggers a heal below
           fails = [k for k, m in repo["modules"].items() if m["status"] != "ok"]
           if fails: bad.append("modules not ok: " + ", ".join(fails))
           if repo["manifest_errors"]: bad.append("manifest errors")
@@ -46,6 +47,19 @@ jobs:
               if r["conclusion"] != "success": bad.append(f"last scheduled refresh ended '{r['conclusion']}'")
               if a > 30: bad.append(f"last scheduled refresh was {a:.0f}h ago")
           print("scheduled refresh runs seen:", len(sched))
+          # calendar and backtest freshness (the self-refresh jobs should keep these young)
+          cal = json.load(open("modules/news/calendar.json"))
+          cage = (now.date() - datetime.fromisoformat(cal["checked"]).date()).days
+          if cage > 40: bad.append(f"economic calendar file last checked {cage} days ago (limit 40)")
+          bt = json.load(open("modules/backtest/results.json"))
+          bage = (now - ts(bt["generated_at"])).days
+          if bage > 21: bad.append(f"backtest results are {bage} days old (limit 21, weekly job should refresh them)")
+          # self-heal: if data is stale, ask the Refresh workflow to run now
+          if age > 6:
+              rq = urllib.request.Request(f"https://api.github.com/repos/{os.environ['REPO']}/actions/workflows/refresh.yml/dispatches", data=json.dumps({"ref": "main"}).encode(),
+                                          headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "Accept": "application/vnd.github+json"}, method="POST")
+              try: urllib.request.urlopen(rq, timeout=30); print("self-heal: dispatched Refresh because data is %.1fh old" % age)
+              except Exception as e: bad.append("self-heal dispatch failed: " + str(e)[:80])
           print("ALL OK" if not bad else "PROBLEMS: " + " | ".join(bad))
           raise SystemExit(1 if bad else 0)
           PY
