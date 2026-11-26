@@ -66,3 +66,31 @@ Likelihood / impact: L = low, M = medium, H = high. "Fixed now" says what is don
 - G32 Forward log (R6): it logs the recommendation about hourly and scores each entry after 24 real closed 1h candles, net of 0.3% costs. The first scores appear about 24h after the first entry (logged 2026-11-26). Entries one hour apart overlap, so the page also shows independent days. A sample this small proves nothing; 98% over 1000+ trades needs months. Status: measuring, not solved.
 - G33 Forward log only records when a Refresh runs (cron plus session wakes). A missed refresh means a missing hour, never an edited record (the runner rejects any change to old records). If the log file were deleted by hand, history would be lost; git history keeps it. Status: mitigated.
 - G34 Forward scoring is conservative where one candle touches both invalidation and target (counted as invalidation) and cannot see inside a candle. Open positions at 24h are marked to the close. Status: disclosed.
+
+## Standing project review (rule from the user, Nov 26 2026: review, then current gaps, future gaps, ways it could fail, and the fix for each)
+Build status at review time: all planned modules built and live (price, klines, flow, volume profile, intent, cross-check log, levels, backtest R1, news R4, recommendation R5, forward log R6). Not complete: no trading rule has a proven edge; forward log has 0 scored entries; leak/trap flag never seen on real data.
+
+Review of what exists (checked today): module tests pass for news, recommendation, backtest, levels, forward-log; UI test passes (one timing flake in the "timestamps do not wrap" check on one run, passed on rerun and in a direct all-tabs probe); scan clean; live Refresh at 10:05Z, all 12 modules ok.
+
+### Current gaps (exist now)
+- R1 No edge: 16 of 16 rule/coin combos negative after 0.3% costs out of sample. Fix: keep the gate; test new rule families (R1b) only with the same split; never lower the gate. The page says wait.
+- R2 Backtest is run by hand, not by the Refresh (it needs network and is slow), so results.json can go stale. Fix: show its date on the page (done via the card time) and add a stale warning when older than 30 days (to build); re-run monthly.
+- R3 News calendar is hand-committed from the calendar agent; BLS blocks fetches. Fix: re-check on the first of each month against the official pages; add an "age of calendar file" line on the news card (to build). Plan B: BEA and FOMC feeds already automatic.
+- R4 Klines have one publishing source (data-api.binance.vision). Cross-check compares with OKX, but if Binance fails the module goes stale rather than switching. Plan B: build an OKX-backed klines fallback module (to build, free public API).
+- R5 Forward log: tiny sample, overlapping hourly entries, intra-candle order unknown. Fix: disclosed on the page; judge only by independent days and after 1000+ entries.
+- R6 The leak/trap rule is untested on real events. Fix: first real event (NFP Dec 4) is the test; record what it did in docs.
+
+### Future gaps (will appear)
+- F1 Data growth: forward-log adds about 4 records an hour, about 100 a day (roughly 60 KB a day, 20 MB a year) in one JSON file the page downloads. Fix before it hurts: when the file passes 1 MB, split by month (archive file per month, summary reads all), keep append-only checks per file.
+- F2 GitHub disables scheduled workflows in a repo after 60 days without repo activity. Refresh data commits are expected to count as activity (not verified), but if commits stop the schedule can stop silently. Fix: the keeper wake already dispatches Refresh when meta is older than 5h and reports; keep it.
+- F3 DST: US clocks change in March 2027 (Cairo/UTC offset to NY changes from 7h to 6h, and Egypt DST rules also apply). Calendar items are stored in UTC with ET source time; the "assumed time" markers and the session wakes (set in market timezones) follow local rules. Fix: check the first week after each DST change.
+- F4 Free-tier limits: Actions minutes and Pages bandwidth are free for a public repo but can change. Plan B: run the same pipeline locally (runner.py works on any machine) and publish the data folder by hand.
+- F5 Browser-only push path (no token) depends on the GitHub web editor layout. Fix: if the layout changes the bundle push fails loudly (no commit appears); Plan B is the file upload page.
+- F6 Calendar dates expire: after Jan 13 2027 CPI and Jan 8 NFP the file has no US dates. Fix: refill monthly (see R3).
+
+### Ways it could fail in the future, with the fix
+- A feed or API changes format: module goes failed or stale, page shows it by name, other modules keep running (runner isolates modules). Fix: per-module tests plus the daily 08:30 health check.
+- A bug makes a wrong number look fine: every number carries source and time, cross-checks run, AI text may cite only computed numbers. Residual: both sources wrong the same way. Fix: keep OKX/Gate cross-checks on.
+- Overfitting by testing many rules: the best-of-24 setting is judged on the held-out 40%. Residual: repeated looks at the same held-out data. Fix: the forward log is the real out-of-sample test; trust it over R1.
+- The user reads "wait" as a bug or reads a conditional plan as advice: labels say hypothesis and "not a recommendation". Fix: keep wording; the decision and the Sharia ruling stay his.
+- Public repo leak of private data: scan.py runs on every push (clean today). Fix: keep it mandatory.
