@@ -11,13 +11,13 @@
   "bollinger_reclaim": "\u0639\u0648\u062f\u0629 \u062f\u0627\u062e\u0644 \u0646\u0637\u0627\u0642 \u0628\u0648\u0644\u064a\u0646\u062c\u0631"
  },
  "exit_grid": "take-profit 0.5/1/1.5/2%, stop 1/2/4%, single or two-tranche (half at half target, stop to entry), 48h time stop",
- "generated_at": "2026-11-26T09:17:28Z",
+ "generated_at": "2026-11-26T10:22:45Z",
  "source": "https://data-api.binance.vision/api/v3/klines",
  "symbols": {
   "XAUTUSDT": {
-   "candles": 5875,
+   "candles": 5876,
    "from": 1774533600000,
-   "to": 1795680000000,
+   "to": 1795683600000,
    "strategies": {
     "support_bounce": {
      "tested_in_sample": 48,
@@ -58,8 +58,8 @@
        0.2165,
        0.3885
       ],
-      "avg_net_per_trade_pct": -0.5182,
-      "total_net_pct": -42.36,
+      "avg_net_per_trade_pct": -0.5178,
+      "total_net_pct": -42.34,
       "max_drawdown_pct": 45.62
      }
     },
@@ -102,8 +102,8 @@
        0.5547,
        0.7399
       ],
-      "avg_net_per_trade_pct": -0.4917,
-      "total_net_pct": -38.73,
+      "avg_net_per_trade_pct": -0.4913,
+      "total_net_pct": -38.71,
       "max_drawdown_pct": 39.83
      }
     },
@@ -146,8 +146,8 @@
        0.2181,
        0.459
       ],
-      "avg_net_per_trade_pct": -0.6307,
-      "total_net_pct": -29.98,
+      "avg_net_per_trade_pct": -0.6299,
+      "total_net_pct": -29.95,
       "max_drawdown_pct": 33.54
      }
     },
@@ -188,8 +188,8 @@
        0.2623,
        0.4908
       ],
-      "avg_net_per_trade_pct": -0.6528,
-      "total_net_pct": -35.04,
+      "avg_net_per_trade_pct": -0.6525,
+      "total_net_pct": -35.03,
       "max_drawdown_pct": 38.06
      }
     }
@@ -197,8 +197,8 @@
   },
   "ETHUSDT": {
    "candles": 17519,
-   "from": 1732615200000,
-   "to": 1795680000000,
+   "from": 1732618800000,
+   "to": 1795683600000,
    "strategies": {
     "support_bounce": {
      "tested_in_sample": 48,
@@ -239,8 +239,8 @@
        0.4272,
        0.5175
       ],
-      "avg_net_per_trade_pct": -0.3593,
-      "total_net_pct": -82.9,
+      "avg_net_per_trade_pct": -0.3589,
+      "total_net_pct": -82.87,
       "max_drawdown_pct": 84.54
      }
     },
@@ -283,8 +283,8 @@
        0.5907,
        0.6886
       ],
-      "avg_net_per_trade_pct": -0.4061,
-      "total_net_pct": -79.5,
+      "avg_net_per_trade_pct": -0.4057,
+      "total_net_pct": -79.47,
       "max_drawdown_pct": 81.07
      }
     },
@@ -369,8 +369,8 @@
        0.6159,
        0.6839
       ],
-      "avg_net_per_trade_pct": -0.3263,
-      "total_net_pct": -92.01,
+      "avg_net_per_trade_pct": -0.3261,
+      "total_net_pct": -92.0,
       "max_drawdown_pct": 92.47
      }
     }
@@ -378,8 +378,8 @@
   },
   "SOLUSDT": {
    "candles": 17519,
-   "from": 1732615200000,
-   "to": 1795680000000,
+   "from": 1732618800000,
+   "to": 1795683600000,
    "strategies": {
     "support_bounce": {
      "tested_in_sample": 48,
@@ -420,7 +420,7 @@
        0.3457,
        0.4029
       ],
-      "avg_net_per_trade_pct": -0.3603,
+      "avg_net_per_trade_pct": -0.3602,
       "total_net_pct": -98.22,
       "max_drawdown_pct": 98.34
      }
@@ -502,14 +502,14 @@
       "max_drawdown_pct": 5.27
      },
      "baseline_oos_same_exits": {
-      "trades": 1314,
-      "win_rate": 0.5814,
+      "trades": 1315,
+      "win_rate": 0.5825,
       "win_rate_ci95": [
-       0.5546,
-       0.6078
+       0.5557,
+       0.6089
       ],
-      "avg_net_per_trade_pct": -0.3278,
-      "total_net_pct": -98.76,
+      "avg_net_per_trade_pct": -0.3272,
+      "total_net_pct": -98.75,
       "max_drawdown_pct": 98.76
      }
     },
@@ -559,8 +559,8 @@
   },
   "BNBUSDT": {
    "candles": 17519,
-   "from": 1732615200000,
-   "to": 1795680000000,
+   "from": 1732618800000,
+   "to": 1795683600000,
    "strategies": {
     "support_bounce": {
      "tested_in_sample": 48,
@@ -595,15 +595,15 @@
       "max_drawdown_pct": 35.79
      },
      "baseline_oos_same_exits": {
-      "trades": 298,
-      "win_rate": 0.6913,
+      "trades": 295,
+      "win_rate": 0.6915,
       "win_rate_ci95": [
-       0.6367,
-       0.741
+       0.6366,
+       0.7415
       ],
-      "avg_net_per_trade_pct": -0.3597,
-      "total_net_pct": -67.58,
-      "max_drawdown_pct": 68.61
+      "avg_net_per_trade_pct": -0.3643,
+      "total_net_pct": -67.63,
+      "max_drawdown_pct": 68.22
      }
     },
     "strict_support": {
@@ -645,9 +645,9 @@
        0.4934,
        0.5604
       ],
-      "avg_net_per_trade_pct": -0.3428,
-      "total_net_pct": -94.84,
-      "max_drawdown_pct": 94.85
+      "avg_net_per_trade_pct": -0.343,
+      "total_net_pct": -94.85,
+      "max_drawdown_pct": 94.86
      }
     },
     "rsi_oversold": {
@@ -689,8 +689,8 @@
        0.6642,
        0.7574
       ],
-      "avg_net_per_trade_pct": -0.355,
-      "total_net_pct": -73.78,
+      "avg_net_per_trade_pct": -0.3555,
+      "total_net_pct": -73.82,
       "max_drawdown_pct": 74.66
      }
     },
@@ -702,15 +702,15 @@
       "sl": 0.04,
       "tranche": true,
       "in_sample": {
-       "trades": 227,
-       "win_rate": 0.8238,
+       "trades": 228,
+       "win_rate": 0.8202,
        "win_rate_ci95": [
-        0.769,
-        0.8678
+        0.7652,
+        0.8646
        ],
-       "avg_net_per_trade_pct": -0.1689,
-       "total_net_pct": -33.74,
-       "max_drawdown_pct": 41.56
+       "avg_net_per_trade_pct": -0.1722,
+       "total_net_pct": -34.34,
+       "max_drawdown_pct": 41.62
       }
      },
      "out_of_sample": {
@@ -731,8 +731,8 @@
        0.6952,
        0.7838
       ],
-      "avg_net_per_trade_pct": -0.3508,
-      "total_net_pct": -74.25,
+      "avg_net_per_trade_pct": -0.3512,
+      "total_net_pct": -74.29,
       "max_drawdown_pct": 75.01
      }
     }
