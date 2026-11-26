@@ -181,4 +181,11 @@ async function obCase(o) {
   ok(!/لم تُبنَ بعد|لم يُبنَ بعد/.test(txt), "no 'not built yet' placeholders remain");
   ok(!/وحدات المستويات والأخبار والاختبار الرجعي \(computed|computed rules/.test(txt), "recommendation source translated");
   await ctx.close(); }
+// forward log (R6)
+{ const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" }); const q = await ctx.newPage(); await q.goto(base); await q.waitForSelector(".card");
+  const txt = await q.evaluate(() => { document.querySelectorAll("details.sec").forEach(d => d.open = true); return document.body.innerText; });
+  ok(/السجل الأمامي: ماذا حدث بعد التوصية/.test(txt), "forward-log section present");
+  ok(/سُجّل: \d+ مرة/.test(txt) && /العينة الآن صغيرة/.test(txt), "forward-log counts and small-sample warning shown");
+  ok(/الهدف المطلوب: نجاح 98%/.test(txt), "forward-log shows the 98% target it is measured against");
+  await ctx.close(); }
 await b.close(); srv.close(); process.exit(fails ? 1 : 0);

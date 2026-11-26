@@ -1,0 +1,22 @@
+{
+  "id": "forward-log",
+  "name_ar": "السجل الأمامي: ما قالته الصفحة وما حدث بعده فعلا",
+  "name_en": "Forward log",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["recommendation", "klines", "forward-log", "forward-score"],
+  "outputs": [
+    {"id": "forward-log", "schema": "schema/forward-log.schema.json"},
+    {"id": "forward-score", "schema": "schema/forward-score.schema.json"},
+    {"id": "forward-summary", "schema": "schema/forward-summary.schema.json"}
+  ],
+  "history": ["forward-log", "forward-score"],
+  "label": "measured",
+  "source": {"name": "recommendation and klines modules (Binance public data), scored on real later candles", "url": "https://data-api.binance.vision/api/v3/klines"},
+  "max_age_hours": 8,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 60,
+  "view": {"tab": "modules", "title": "السجل الأمامي", "type": "text"}
+}

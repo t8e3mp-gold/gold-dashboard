@@ -1,1 +1,1 @@
-{"enabled": ["hello", "price-spot", "klines", "flow", "volume-profile", "intent", "crosscheck-log", "levels", "backtest", "news", "recommendation"]}
+{"enabled": ["hello", "price-spot", "klines", "flow", "volume-profile", "intent", "crosscheck-log", "levels", "backtest", "news", "recommendation", "forward-log"]}

@@ -12,7 +12,7 @@ const ageH = ts => (nowMs() - Date.parse(ts)) / 36e5;
 const cairoFmt = new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Cairo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"});
 function cairoStr(ms) { const o = {}; cairoFmt.formatToParts(new Date(ms)).forEach(x => { o[x.type] = x.value; }); return o.year + "-" + o.month + "-" + o.day + " " + o.hour + ":" + o.minute + ":" + o.second; }
 function timeEl(ms) { const f = document.createDocumentFragment(), x = $("bdi", null, cairoStr(ms)), u = $("bdi", null, "UTC " + new Date(ms).toISOString().slice(11, 19)); x.dir = "ltr"; u.dir = "ltr"; f.append(x, " بتوقيت القاهرة (", u, ")"); return f; }
-const arSrc = t => String(t).replace(/Al Jazeera RSS, Federal Reserve press RSS, ECB press RSS, Fed FOMC calendar, BEA release schedule/g, "خلاصات الجزيرة، بيانات الاحتياطي الفيدرالي والبنك المركزي الأوروبي، تقويم الفيدرالي، جدول مكتب التحليل الاقتصادي").replace(/levels, news and backtest modules \(computed rules, no AI\)/g, "وحدات المستويات والأخبار والاختبار الرجعي (قواعد محسوبة بدون ذكاء اصطناعي)").replace(/Binance public klines backtest \(run by this repo\)/g, "اختبار رجعي على شموع باينانس العامة (من هذا المستودع)").replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
+const arSrc = t => String(t).replace(/recommendation and klines modules \(Binance public data\), scored on real later candles/g, "وحدتا التوصية والشموع (بيانات باينانس العامة)، وتُقيَّم بشموع حقيقية لاحقة").replace(/Al Jazeera RSS, Federal Reserve press RSS, ECB press RSS, Fed FOMC calendar, BEA release schedule/g, "خلاصات الجزيرة، بيانات الاحتياطي الفيدرالي والبنك المركزي الأوروبي، تقويم الفيدرالي، جدول مكتب التحليل الاقتصادي").replace(/levels, news and backtest modules \(computed rules, no AI\)/g, "وحدات المستويات والأخبار والاختبار الرجعي (قواعد محسوبة بدون ذكاء اصطناعي)").replace(/Binance public klines backtest \(run by this repo\)/g, "اختبار رجعي على شموع باينانس العامة (من هذا المستودع)").replace(/klines and volume-profile modules \(Binance public data\)/g, "وحدتا الشموع وبروفايل الحجم (بيانات باينانس العامة)").replace(/Cross-check results of the other modules/g, "نتائج الفحص المتبادل للوحدات الأخرى").replace(/Runner system clock \(UTC\)/g, "ساعة جهاز التشغيل (UTC)").replace(/klines module 1h volume over the same whole hours/g, "حجم الساعة من وحدة الشموع على نفس الساعات الكاملة").replace(/klines and flow modules \(Binance\)/g, "وحدتا الشموع والتدفق (باينانس)").replace(/OKX spot candles/g, "شموع أو كي إكس الفورية").replace(/OKX spot tickers/g, "أسعار أو كي إكس الفورية").replace(/, 1m candles/g, "، شموع الدقيقة").replace(/\(taker buy volume\)/g, "(حجم الشراء المبادر)").replace(/Binance aggTrades summed for the last closed hour/g, "مجموع الصفقات المجمعة من باينانس لآخر ساعة مغلقة").replace(/klines module volume \(same exchange\)/g, "حجم وحدة الشموع (نفس المنصة)").replace(/taker buy volume/g, "حجم الشراء المبادر").replace(/aggTrades/g, "الصفقات المجمعة").replace(/Binance public data mirror/g, "مرآة بيانات باينانس العامة").replace(/Binance/g, "باينانس").replace(/OKX/g, "أو كي إكس").replace(/Gate\.io/g, "جيت").replace(/\bbinance\b/g, "باينانس").replace(/\bokx\b/g, "أو كي إكس").replace(/\bgate\b/g, "جيت").replace(/klines/g, "الشموع").replace(/flow/g, "التدفق");
 
 async function getJSON(p, track) {
   const r = await fetch(p + "?v=" + bust, {cache: "no-store"});
@@ -237,6 +237,17 @@ function recView(rec) {
   const t = v.inputs_time, a = $("div", "src"); a.append("أعمار المدخلات: المستويات "); a.append(timeEl(Date.parse(t.levels))); a.append("، الأخبار "); a.append(timeEl(Date.parse(t.news))); a.append("، الاختبار الرجعي "); a.append(timeEl(Date.parse(t.backtest))); w.append(a);
   return w;
 }
+function fwdView(rec) {
+  const w = $("div"), v = rec.value, pc = x => x == null ? "-" : (Math.round(x * 1000) / 10) + "%", sg = x => x == null ? "-" : (x > 0 ? "+" : "") + x;
+  const d = $("div", "lvl"); d.append($("b", null, "السجل الأمامي (قياس حقيقي)"), " ", $("span", "pill p-lbl", "مقاس"));
+  d.append($("div", "src", "كل ساعة تقريبا تُسجَّل التوصية كما قالتها، وبعد 24 ساعة تُقارَن بالشموع الحقيقية اللاحقة بعد رسوم 0.3%. لا تعديل لما سُجِّل ولا نظر للمستقبل."));
+  w.append(d);
+  const s = $("div", "lvl"); s.append($("div", "src", "سُجّل: " + v.logged + " مرة | حُسب نتيجته: " + v.scored + " | أيام مستقلة: " + v.independent_days + " (السجلات المتجاورة تتداخل، فالعدد الفعلي أقل)."));
+  s.append($("div", "src", "بخطة شراء: " + v.with_plan + " | لمس المنطقة: " + v.touched + " | رابحة: " + v.wins + " | نسبة النجاح: " + pc(v.win_rate) + " | متوسط الصافي: " + sg(v.avg_net_pct) + "% | هدف أولا: " + v.target_first + " | إبطال أولا: " + v.invalid_first));
+  s.append($("div", "src", "الهدف المطلوب: نجاح " + pc(v.target.win_rate) + " على " + v.target.trades + " صفقة فأكثر. العينة الآن صغيرة جدا ولا تثبت شيئا." + (v.first_logged ? "" : " لم يبدأ التسجيل بعد."))); w.append(s);
+  if (v.first_logged) { const e = $("div", "src"); e.append("بدأ التسجيل: "); e.append(timeEl(Date.parse(v.first_logged))); w.append(e); }
+  return w;
+}
 function recCard(mod, rec, sym) {
   const c = $("div", "card");
   const ttl = rec.title_ar || (mod.view ? mod.view.title : rec.id);
@@ -250,6 +261,7 @@ function recCard(mod, rec, sym) {
   else if (rec.unit === "backtest" && rec.value) c.append(backtestView(rec));
   else if (rec.unit === "news" && rec.value) c.append(newsView(rec));
   else if (rec.unit === "recommendation" && rec.value) c.append(recView(rec));
+  else if (rec.unit === "forward-summary" && rec.value) c.append(fwdView(rec));
   else if (/^xcheck/.test(rec.unit) && rec.stats) c.append(xcheckView(rec));
   else if (rec.unit === "divergence" && rec.stats) c.append(intentDivView(rec));
   else c.append($("div", "val", typeof rec.value === "object" ? JSON.stringify(rec.value) : String(rec.value) + (rec.unit ? " " + rec.unit : "")));
@@ -435,6 +447,7 @@ async function main() {
     ["levels", "المستويات المراقَبة (فرضيات)", r => /^levels\./.test(r.id)],
     ["news", "الأخبار والأحداث المجدولة", r => /^news\./.test(r.id)],
     ["rec", "التوصية والمنطقة وإبطال الفكرة (فرضية)", r => /^recommendation\./.test(r.id)],
+    ["fwd", "السجل الأمامي: ماذا حدث بعد التوصية", r => /^forwardsummary\./.test(r.id)],
     ["price", "لقطة السعر والفحص", r => /^(price|change24h)\./.test(r.id)],
     ["kline", "الشموع", r => /^kline\./.test(r.id)],
     ["flow", "التدفق (دلتا المشترين والبائعين)", r => /^flow\./.test(r.id)],
@@ -446,6 +459,7 @@ async function main() {
   const fx = n => Number(Number(n).toPrecision(6)).toString();
   function oneLine(key, c) {
     const L = {rec: () => { const x = find(c, r => /^recommendation\./.test(r.id))[0]; if (!x) return ""; return STANCEAR[x.r.value.stance] + " | " + (x.r.value.edge.proven ? "ميزة مثبتة" : "لا ميزة مثبتة"); },
+      fwd: () => { const x = find(c, r => /^forwardsummary\./.test(r.id))[0]; if (!x) return ""; return "سُجّل " + x.r.value.logged + " | حُسب " + x.r.value.scored + " | لمس المنطقة " + x.r.value.touched; },
       news: () => { const x = find(c, r => /^news\./.test(r.id))[0]; if (!x) return ""; const sx = x.r.value.stance; return (sx.wait ? "انتظر (حدث مجدول)" : "لا حدث مجدول قريب") + (sx.leak_trap ? " | احتمال تسريب أو فخ" : ""); },
       tests: () => { const x = find(c, r => /^backtest\./.test(r.id))[0]; if (!x) return ""; const p = Object.values(x.r.value.strategies).filter(r => r.out_of_sample && r.out_of_sample.trades); const pos = p.filter(r => r.out_of_sample.avg_net_per_trade_pct > 0).length; return pos + " من " + p.length + " قواعد موجبة خارج العينة"; },
       levels: () => { const x = find(c, r => /^levels\./.test(r.id))[0]; if (!x) return ""; const pk = levelPick(x.r.value.zones, x.r.value.price_ref), f = n => Number(Number(n).toPrecision(7)); return "أقرب دعم " + (pk.sup1 ? f(pk.sup1.mid) : "-") + " | أقرب مقاومة " + (pk.res1 ? f(pk.res1.mid) : "-"); },
