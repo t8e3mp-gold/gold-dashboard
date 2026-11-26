@@ -1,6 +1,7 @@
 name: Refresh data
 on:
-  schedule: [{cron: "17 */3 * * *"}]   # every 3 hours on its own; session wakes add extra runs
+  # Three off-peak slots per 3 hours (never at :00, where GitHub delays or drops scheduled runs). Extra fires skip themselves when data is fresh.
+  schedule: [{cron: "17 */3 * * *"}, {cron: "47 1-23/3 * * *"}, {cron: "32 2-23/3 * * *"}]
   workflow_dispatch:
     inputs:
       drill:
@@ -16,23 +17,40 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with: {ref: main}
+      - name: Gate (scheduled fires skip when data is under 100 minutes old)
+        id: gate
+        run: |
+          skip=false
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            age=$(python3 -c "import json,datetime as d; g=json.load(open('data/meta.json'))['generated_at']; print(int((d.datetime.now(d.timezone.utc)-d.datetime.fromisoformat(g.replace('Z','+00:00'))).total_seconds()//60))" || echo 9999)
+            echo "meta age: $age min"
+            [ "$age" -lt 100 ] && skip=true
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        if: steps.gate.outputs.skip != 'true'
         with: {python-version: "3.12"}
       - run: pip install -r requirements.txt
+        if: steps.gate.outputs.skip != 'true'
       - name: Tests first
+        if: steps.gate.outputs.skip != 'true'
         run: python -m unittest discover -s tests
       - name: Self-refresh the economic calendar (BLS iCal; leaves the file unchanged if BLS refuses)
+        if: steps.gate.outputs.skip != 'true'
         continue-on-error: true
         run: python tools/calendar_sync.py
       - name: Run modules (invalid output is never published; one failure does not block the others)
+        if: steps.gate.outputs.skip != 'true'
         id: run
         continue-on-error: true
         env:
           EXTRA_MODULES: ${{ inputs.drill && 'drill' || '' }}
         run: python pipeline/runner.py
       - name: Scan new data for secrets and personal data
+        if: steps.gate.outputs.skip != 'true'
         run: python tools/scan.py data
       - name: Commit changed data
+        if: steps.gate.outputs.skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -42,7 +60,7 @@ jobs:
           git pull --rebase --autostash origin main
           git push
       - name: Fail the run if any module failed
-        if: steps.run.outcome == 'failure'
+        if: steps.gate.outputs.skip != 'true' && steps.run.outcome == 'failure'
         run: |
           echo "::error::at least one module failed, see 'Run modules' step; other modules were published"
           exit 1
