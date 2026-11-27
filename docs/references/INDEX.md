@@ -1,3 +1,0 @@
-
-## Nov 26 2026: free database without a card (user's search link)
-- https://search.brave.com/search?q=%D9%82%D8%A7%D8%B9%D8%AF%D8%A9+%D8%A8%D9%8A%D8%A7%D9%86%D8%A7%D8%AA+%D9%85%D8%AD%D8%A7%D9%86%D9%8A%D8%A9+%D8%A8%D8%A7%D9%84%D9%83%D8%A7%D9%85%D9%84+%D8%A8%D8%AF%D9%88%D9%86+%D9%83%D8%A7%D8%B1%D8%AA+%D9%81%D9%8A%D8%B2%D8%A7 (search: "completely free database without a visa card"). My summary: led to the comparison of free no-card databases: Cloudflare D1 (chosen, account created with no card), Turso, Neon, Firebase Spark, MongoDB Atlas free, Supabase free. Details in the assistant's report; D1 limits: 10 DBs, 5M reads/day, 100k writes/day, 5 GB.
