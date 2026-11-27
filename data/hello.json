@@ -6,13 +6,13 @@
  "records": [
   {
    "id": "hello.last_run",
-   "value": "2026-11-27T02:25:23Z",
+   "value": "2026-11-27T04:25:23Z",
    "unit": "utc-time",
    "source": {
     "name": "Runner system clock (UTC)",
     "url": "https://github.com/t8e3mp-gold/gold-dashboard"
    },
-   "fetched_at": "2026-11-27T02:25:23Z",
+   "fetched_at": "2026-11-27T04:25:23Z",
    "label": "measured",
    "max_age_hours": 48,
    "checked_against": null
