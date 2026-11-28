@@ -49,22 +49,24 @@ def signals(c, min_touch):
             if n >= min_touch and lo <= zhi * 1.001 and cl > zhi * 1.001 and lo >= zlo * 0.995: out.append((t, zlo)); break
     return out
 
-def simulate(c, sigs, tp, sl_pct, hold, lo_i, hi_i, tranche=False):
+def simulate(c, sigs, tp, sl_pct, hold, lo_i, hi_i, tranche=False, info=None):
     """sigs: list of (t, zone_lo) or None for baseline (enter whenever flat). tranche=True: sell half at tp/2, stop of the rest moves to entry,
-    sell the rest at tp. Returns list of net returns (fees and slippage charged on each sold part). Same-candle stop and target: stop counts."""
+    sell the rest at tp. info (optional dict) counts how trades ended: target, stop, time (48h time stop, i.e. stuck), open_end (still open when the data ends, marked at the last close). Returns list of net returns (fees and slippage charged on each sold part). Same-candle stop and target: stop counts."""
     trades = []; t = lo_i; sg = {s[0]: s for s in sigs} if sigs is not None else None
     while t < hi_i - 1:
         if sg is not None and t not in sg: t += 1; continue
         e = t + 1; entry = c[e][1]; stop = entry * (1 - sl_pct); t1 = entry * (1 + tp / 2); t2 = entry * (1 + tp)
-        got = 0.0; left = 1.0; x = e; closed = False
+        got = 0.0; left = 1.0; x = e; closed = False; tag = None
         for x in range(e, min(e + hold, hi_i)):
             o, h, l, cl = c[x][1:5]
-            if l <= stop: got += left * (min(o, stop) / entry - 1); left = 0; closed = True; break
+            if l <= stop: got += left * (min(o, stop) / entry - 1); left = 0; closed = True; tag = "stop"; break
             if tranche and left == 1.0 and h >= t1:
                 got += 0.5 * (max(o, t1) / entry - 1); left = 0.5; stop = max(stop, entry)
             if h >= t2:
-                got += left * (max(o, t2) / entry - 1); left = 0; closed = True; break
-        if not closed: got += left * (c[x][4] / entry - 1)
+                got += left * (max(o, t2) / entry - 1); left = 0; closed = True; tag = "target"; break
+        if not closed:
+            got += left * (c[x][4] / entry - 1); tag = "time" if e + hold <= hi_i else "open_end"
+        if info is not None: info[tag] = info.get(tag, 0) + 1
         trades.append(got - RT); t = x + 1
     return trades
 
@@ -164,7 +166,7 @@ def run_strategy(c, strat, split=0.6):
     p, sigs, tp, sl, hold, tr, st = max(ok, key=lambda x: x[6]["avg_net_per_trade_pct"])
     oos = [x for x in sigs if x[0] >= cut]
     res["chosen"] = {"params": p, "tp": tp, "sl": sl, "tranche": tr, "in_sample": st}
-    res["out_of_sample"] = stats(simulate(c, oos, tp, sl, hold, cut, len(c), tr))
+    ex = {}; res["out_of_sample"] = stats(simulate(c, oos, tp, sl, hold, cut, len(c), tr, ex)); res["out_of_sample"]["exits"] = {k: ex.get(k, 0) for k in ("target", "stop", "time", "open_end")}
     res["baseline_oos_same_exits"] = stats(simulate(c, None, tp, sl, hold, cut, len(c), tr))
     return res
 

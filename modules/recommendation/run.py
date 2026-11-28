@@ -1,12 +1,18 @@
 """recommendation (R5): computed rules only, display only, no orders, no AI text. Spot, own the asset, buy dips and sell rallies in tranches.
-Honest gate: the stance can leave "wait" only if the backtest found a rule with a proven edge (EDGE_MIN_TRADES or more out-of-sample trades and a
-positive average net after fees). Until then the page shows a CONDITIONAL plan (what would have to happen, where the idea is invalid), never a call.
+Staged gate (user decision, Nov 28 2026): stages 60, 70, 80, 90, 98 (% win rate). A stage opens for a coin only if some rule has at least STAGE_MIN_TRADES[stage] (100 for the 60 stage, 200 for the others)
+out-of-sample trades, a win rate at or above the stage, and a positive TOTAL net after fees; trades that ended by the time stop or were still open at the end of the
+data are inside those counts. The 98 stage also needs max drawdown under FULL_DD_PCT. Stages 60 to 90 mean "under observation" only. The stance can leave "wait"
+only at 98 (the full recommendation level). Until then the page shows a CONDITIONAL plan (what would have to happen, where the idea is invalid), never a call.
 The UI writes the Arabic text from these numbers, so every number on screen is one computed here."""
 import json, os
 from datetime import datetime, timezone
 
 SYMS = ["XAUT", "BNB", "ETH", "SOL"]
-EDGE_MIN_TRADES = 100
+STAGES = (60, 70, 80, 90, 98)
+FULL_LEVEL = 98
+STAGE_MIN_TRADES = {60: 100, 70: 200, 80: 200, 90: 200, 98: 200}   # user decision Nov 28 2026 (04:00): the 60 stage needs 100, the others 200
+FULL_DD_PCT = 20.0
+EDGE_MIN_TRADES = STAGE_MIN_TRADES[FULL_LEVEL]   # kept for the old field name used by the page
 RT_COST = 0.003          # round trip fee + slippage, same as the backtest
 NEAR_ATR = 1.0           # price within this many ATR of a zone counts as "near"
 
@@ -21,15 +27,27 @@ def pick(zones, price):
     return {"res1": above[0] if above else None, "sup1": below[0] if below else None,
             "res_strong": (strong(above, 1) or [None])[0], "sup_strong": (strong(below, -1) or [None])[0]}
 
+def qualifies(row, stage):
+    """One rule at one stage. Pure function (tested). Counts include time-stop and still-open trades because the backtest already does."""
+    if row["trades"] < STAGE_MIN_TRADES[stage] or row["win_rate"] * 100 < stage: return False
+    if row.get("total_net_pct") is None or row["total_net_pct"] <= 0: return False
+    if stage >= FULL_LEVEL and row["max_drawdown_pct"] >= FULL_DD_PCT: return False
+    return True
+
 def edge(bt):
-    """Best out-of-sample rule for the coin and whether any rule clears the gate. bt = backtest record value['strategies']."""
+    """Best out-of-sample rule for the coin and the highest stage any rule clears. bt = backtest record value['strategies']."""
     rows = []
     for k, r in bt.items():
         o = r.get("out_of_sample")
-        if o and o.get("trades"): rows.append({"rule": k, "trades": o["trades"], "win_rate": o["win_rate"], "avg_net_pct": o["avg_net_per_trade_pct"], "max_drawdown_pct": o["max_drawdown_pct"]})
+        if o and o.get("trades"): rows.append({"rule": k, "trades": o["trades"], "win_rate": o["win_rate"], "avg_net_pct": o["avg_net_per_trade_pct"], "total_net_pct": o.get("total_net_pct"),
+                                               "max_drawdown_pct": o["max_drawdown_pct"], "exits": o.get("exits")})
     best = max(rows, key=lambda x: x["avg_net_pct"]) if rows else None
-    proven = [x for x in rows if x["trades"] >= EDGE_MIN_TRADES and x["avg_net_pct"] > 0]
-    return {"proven": bool(proven), "best": best, "rules_tested": len(rows), "rules_positive": len([x for x in rows if x["avg_net_pct"] > 0]), "min_trades": EDGE_MIN_TRADES}
+    stage, rule = 0, None
+    for st in STAGES:
+        ok = [x for x in rows if qualifies(x, st)]
+        if ok: stage, rule = st, max(ok, key=lambda x: x["total_net_pct"])
+    return {"proven": stage >= FULL_LEVEL, "stage": stage, "stage_rule": rule, "stages": list(STAGES), "best": best, "rules_tested": len(rows),
+            "rules_positive": len([x for x in rows if x["avg_net_pct"] > 0]), "min_trades": STAGE_MIN_TRADES[FULL_LEVEL], "stage_min_trades": {str(k): v for k, v in STAGE_MIN_TRADES.items()}, "full_level": FULL_LEVEL, "full_dd_pct": FULL_DD_PCT}
 
 def buy_plan(pk, price, atr):
     z = pk["sup_strong"] or pk["sup1"]
@@ -53,7 +71,8 @@ def sell_plan(pk, price, atr):
 def decide(price, atr, pk, forming, news, ed):
     """Pure function (tested). Returns (stance, reasons). stance in wait | buy_watch | sell_watch."""
     reasons = []
-    if not ed["proven"]: reasons.append({"code": "no_edge", "best": ed["best"], "tested": ed["rules_tested"], "positive": ed["rules_positive"]})
+    if ed["stage"] == 0: reasons.append({"code": "no_edge", "best": ed["best"], "tested": ed["rules_tested"], "positive": ed["rules_positive"]})
+    elif not ed["proven"]: reasons.append({"code": "stage_observation", "stage": ed["stage"], "rule": ed["stage_rule"], "tested": ed["rules_tested"]})
     if news.get("wait"): reasons.append({"code": "news_wait"})
     if news.get("leak_trap"): reasons.append({"code": "leak_trap"})
     near_sup = bool(pk["sup1"] and atr and (price - pk["sup1"]["hi"]) <= NEAR_ATR * atr)
@@ -81,7 +100,7 @@ def build(levels, news, backtest, klines, now):
                                "buy_plan": buy_plan(pk, price, atr), "sell_plan": sell_plan(pk, price, atr),
                                "news": {"wait": nw["wait"], "leak_trap": nw["leak_trap"], "next_event": nw.get("next_event")},
                                "inputs_time": {"levels": lv["fetched_at"], "news": next(r for r in news["records"] if r["id"] == "news.%susdt" % s.lower())["fetched_at"], "backtest": bt["fetched_at"]}},
-                     "stats": {"rules": "docs/RECOMMENDATION_RULES.md", "edge_min_trades": EDGE_MIN_TRADES, "round_trip_cost": RT_COST, "near_atr": NEAR_ATR},
+                     "stats": {"rules": "docs/RECOMMENDATION_RULES.md", "stages": list(STAGES), "stage_min_trades": {str(k): v for k, v in STAGE_MIN_TRADES.items()}, "full_level": FULL_LEVEL, "edge_min_trades": EDGE_MIN_TRADES, "round_trip_cost": RT_COST, "near_atr": NEAR_ATR},
                      "source": {"name": "levels, news and backtest modules (computed rules, no AI)", "url": "https://github.com/t8e3mp-gold/gold-dashboard/blob/main/docs/RECOMMENDATION_RULES.md"},
                      "fetched_at": ts, "label": "hypothesis", "max_age_hours": 8, "checked_against": None})
     return {"meta": {"module": "recommendation", "version": "1.0.0"}, "records": recs}

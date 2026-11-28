@@ -30,6 +30,17 @@ class T(unittest.TestCase):
         c = [C(100, 100, 100, 100), C(100, 100, 100, 100), C(100, 101.2, 99.9, 100.5), C(100.5, 100.6, 99.0, 99.5)]
         tr = r1.simulate(c, [(0, 0)], 0.02, 0.05, 5, 0, 4, True)
         self.assertAlmostEqual(tr[0], 0.5 * 0.01 + 0.5 * 0.0 - r1.RT, 9)
+    def test_exit_reasons_counted(self):
+        f = C(100, 100, 100, 100)
+        def run(second, hi_i=6, hold=2):
+            info = {}; r1.simulate([f, f, second, f, f, f], [(0, 0)], 0.01, 0.01, hold, 0, hi_i, False, info); return info
+        self.assertEqual(run(C(100, 101.5, 100, 101)), {"target": 1})
+        self.assertEqual(run(C(100, 100.2, 98.0, 99)), {"stop": 1})
+        self.assertEqual(run(C(100, 100.2, 99.9, 100)), {"time": 1})      # neither target nor stop within the 2 candle hold
+    def test_open_trade_at_data_end_is_counted_and_marked(self):
+        c = [C(100, 100, 100, 100), C(100, 100, 100, 100), C(100, 100.1, 99.9, 99.5)]
+        info = {}; tr = r1.simulate(c, [(0, 0)], 0.05, 0.05, 48, 0, 3, False, info)
+        self.assertEqual(info, {"open_end": 1}); self.assertAlmostEqual(tr[0], 99.5 / 100 - 1 - r1.RT, 9)
     def test_rsi_all_up_is_100(self):
         c = [C(i, i, i, i + 1) for i in range(1, 40)]
         self.assertEqual(r1.rsi_series(c)[-1], 100.0)

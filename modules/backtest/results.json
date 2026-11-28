@@ -14,7 +14,7 @@
   "session_open": "\u062f\u062e\u0648\u0644 \u0639\u0646\u062f \u0641\u062a\u062d \u062c\u0644\u0633\u0629 (\u062a\u0648\u0642\u064a\u062a UTC)"
  },
  "exit_grid": "take-profit 0.5/1/1.5/2%, stop 1/2/4%, single or two-tranche (half at half target, stop to entry), 48h time stop",
- "generated_at": "2026-11-28T01:45:13Z",
+ "generated_at": "2026-11-28T01:56:46Z",
  "source": "https://data-api.binance.vision/api/v3/klines",
  "symbols": {
   "XAUTUSDT": {
@@ -52,7 +52,13 @@
       ],
       "avg_net_per_trade_pct": -0.4564,
       "total_net_pct": -26.33,
-      "max_drawdown_pct": 29.03
+      "max_drawdown_pct": 29.03,
+      "exits": {
+       "target": 16,
+       "stop": 36,
+       "time": 13,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 104,
@@ -96,7 +102,13 @@
       ],
       "avg_net_per_trade_pct": -0.6289,
       "total_net_pct": -18.5,
-      "max_drawdown_pct": 18.83
+      "max_drawdown_pct": 18.83,
+      "exits": {
+       "target": 20,
+       "stop": 1,
+       "time": 11,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 96,
@@ -140,7 +152,13 @@
       ],
       "avg_net_per_trade_pct": -0.7531,
       "total_net_pct": -12.34,
-      "max_drawdown_pct": 13.81
+      "max_drawdown_pct": 13.81,
+      "exits": {
+       "target": 4,
+       "stop": 2,
+       "time": 11,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 54,
@@ -182,7 +200,13 @@
       ],
       "avg_net_per_trade_pct": -0.6144,
       "total_net_pct": -21.62,
-      "max_drawdown_pct": 22.55
+      "max_drawdown_pct": 22.55,
+      "exits": {
+       "target": 6,
+       "stop": 16,
+       "time": 17,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 66,
@@ -227,7 +251,13 @@
       ],
       "avg_net_per_trade_pct": -0.715,
       "total_net_pct": -25.39,
-      "max_drawdown_pct": 27.99
+      "max_drawdown_pct": 27.99,
+      "exits": {
+       "target": 7,
+       "stop": 2,
+       "time": 30,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 54,
@@ -271,7 +301,13 @@
       ],
       "avg_net_per_trade_pct": -0.3512,
       "total_net_pct": -8.04,
-      "max_drawdown_pct": 9.86
+      "max_drawdown_pct": 9.86,
+      "exits": {
+       "target": 6,
+       "stop": 7,
+       "time": 10,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 58,
@@ -315,7 +351,13 @@
       ],
       "avg_net_per_trade_pct": -0.626,
       "total_net_pct": -25.51,
-      "max_drawdown_pct": 26.38
+      "max_drawdown_pct": 26.38,
+      "exits": {
+       "target": 10,
+       "stop": 15,
+       "time": 20,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 63,
@@ -366,7 +408,13 @@
       ],
       "avg_net_per_trade_pct": -0.3638,
       "total_net_pct": -54.56,
-      "max_drawdown_pct": 54.56
+      "max_drawdown_pct": 54.56,
+      "exits": {
+       "target": 62,
+       "stop": 142,
+       "time": 7,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 747,
@@ -410,7 +458,13 @@
       ],
       "avg_net_per_trade_pct": -0.1379,
       "total_net_pct": -10.09,
-      "max_drawdown_pct": 16.76
+      "max_drawdown_pct": 16.76,
+      "exits": {
+       "target": 42,
+       "stop": 9,
+       "time": 16,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 362,
@@ -454,7 +508,13 @@
       ],
       "avg_net_per_trade_pct": -0.3081,
       "total_net_pct": -16.27,
-      "max_drawdown_pct": 16.6
+      "max_drawdown_pct": 16.6,
+      "exits": {
+       "target": 21,
+       "stop": 36,
+       "time": 0,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 1405,
@@ -496,7 +556,13 @@
       ],
       "avg_net_per_trade_pct": -0.4043,
       "total_net_pct": -49.63,
-      "max_drawdown_pct": 51.35
+      "max_drawdown_pct": 51.35,
+      "exits": {
+       "target": 103,
+       "stop": 60,
+       "time": 1,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 748,
@@ -541,7 +607,13 @@
       ],
       "avg_net_per_trade_pct": -0.3342,
       "total_net_pct": -34.08,
-      "max_drawdown_pct": 37.33
+      "max_drawdown_pct": 37.33,
+      "exits": {
+       "target": 51,
+       "stop": 55,
+       "time": 12,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 464,
@@ -585,7 +657,13 @@
       ],
       "avg_net_per_trade_pct": -0.116,
       "total_net_pct": -13.09,
-      "max_drawdown_pct": 26.9
+      "max_drawdown_pct": 26.9,
+      "exits": {
+       "target": 54,
+       "stop": 20,
+       "time": 22,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 298,
@@ -629,7 +707,13 @@
       ],
       "avg_net_per_trade_pct": -0.5292,
       "total_net_pct": -61.01,
-      "max_drawdown_pct": 61.66
+      "max_drawdown_pct": 61.66,
+      "exits": {
+       "target": 81,
+       "stop": 45,
+       "time": 41,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 298,
@@ -680,7 +764,13 @@
       ],
       "avg_net_per_trade_pct": -0.3182,
       "total_net_pct": -55.32,
-      "max_drawdown_pct": 57.4
+      "max_drawdown_pct": 57.4,
+      "exits": {
+       "target": 97,
+       "stop": 150,
+       "time": 0,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 1089,
@@ -724,7 +814,13 @@
       ],
       "avg_net_per_trade_pct": -0.4264,
       "total_net_pct": -37.32,
-      "max_drawdown_pct": 38.19
+      "max_drawdown_pct": 38.19,
+      "exits": {
+       "target": 21,
+       "stop": 87,
+       "time": 0,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 1114,
@@ -768,7 +864,13 @@
       ],
       "avg_net_per_trade_pct": -0.1174,
       "total_net_pct": -5.13,
-      "max_drawdown_pct": 5.27
+      "max_drawdown_pct": 5.27,
+      "exits": {
+       "target": 32,
+       "stop": 12,
+       "time": 0,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 1312,
@@ -810,7 +912,13 @@
       ],
       "avg_net_per_trade_pct": -0.3096,
       "total_net_pct": -43.63,
-      "max_drawdown_pct": 45.3
+      "max_drawdown_pct": 45.3,
+      "exits": {
+       "target": 118,
+       "stop": 60,
+       "time": 1,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 914,
@@ -855,7 +963,13 @@
       ],
       "avg_net_per_trade_pct": -0.3119,
       "total_net_pct": -29.63,
-      "max_drawdown_pct": 34.22
+      "max_drawdown_pct": 34.22,
+      "exits": {
+       "target": 50,
+       "stop": 50,
+       "time": 6,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 570,
@@ -899,7 +1013,13 @@
       ],
       "avg_net_per_trade_pct": -0.225,
       "total_net_pct": -22.12,
-      "max_drawdown_pct": 24.46
+      "max_drawdown_pct": 24.46,
+      "exits": {
+       "target": 38,
+       "stop": 66,
+       "time": 2,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 747,
@@ -943,7 +1063,13 @@
       ],
       "avg_net_per_trade_pct": -0.4725,
       "total_net_pct": -68.13,
-      "max_drawdown_pct": 68.5
+      "max_drawdown_pct": 68.5,
+      "exits": {
+       "target": 169,
+       "stop": 48,
+       "time": 13,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 561,
@@ -994,7 +1120,13 @@
       ],
       "avg_net_per_trade_pct": -0.3024,
       "total_net_pct": -69.14,
-      "max_drawdown_pct": 69.46
+      "max_drawdown_pct": 69.46,
+      "exits": {
+       "target": 147,
+       "stop": 223,
+       "time": 8,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 647,
@@ -1038,7 +1170,13 @@
       ],
       "avg_net_per_trade_pct": -0.3608,
       "total_net_pct": -37.69,
-      "max_drawdown_pct": 37.83
+      "max_drawdown_pct": 37.83,
+      "exits": {
+       "target": 68,
+       "stop": 52,
+       "time": 9,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 842,
@@ -1082,7 +1220,13 @@
       ],
       "avg_net_per_trade_pct": -0.3679,
       "total_net_pct": -31.97,
-      "max_drawdown_pct": 33.26
+      "max_drawdown_pct": 33.26,
+      "exits": {
+       "target": 65,
+       "stop": 14,
+       "time": 20,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 360,
@@ -1124,7 +1268,13 @@
       ],
       "avg_net_per_trade_pct": -0.3068,
       "total_net_pct": -35.36,
-      "max_drawdown_pct": 36.82
+      "max_drawdown_pct": 36.82,
+      "exits": {
+       "target": 57,
+       "stop": 60,
+       "time": 18,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 370,
@@ -1169,7 +1319,13 @@
       ],
       "avg_net_per_trade_pct": -0.3893,
       "total_net_pct": -48.65,
-      "max_drawdown_pct": 48.84
+      "max_drawdown_pct": 48.84,
+      "exits": {
+       "target": 46,
+       "stop": 112,
+       "time": 9,
+       "open_end": 0
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 540,
@@ -1213,7 +1369,13 @@
       ],
       "avg_net_per_trade_pct": -0.3179,
       "total_net_pct": -21.88,
-      "max_drawdown_pct": 24.33
+      "max_drawdown_pct": 24.33,
+      "exits": {
+       "target": 28,
+       "stop": 12,
+       "time": 31,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 237,
@@ -1257,7 +1419,13 @@
       ],
       "avg_net_per_trade_pct": -0.3579,
       "total_net_pct": -59.44,
-      "max_drawdown_pct": 59.89
+      "max_drawdown_pct": 59.89,
+      "exits": {
+       "target": 54,
+       "stop": 187,
+       "time": 6,
+       "open_end": 1
+      }
      },
      "baseline_oos_same_exits": {
       "trades": 659,

@@ -210,13 +210,16 @@ function newsView(rec) {
   w.append($("div", "src", bad.length ? "تحذير: مصادر لم تعمل في آخر تحديث: " + bad.map(([k]) => FEEDAR[k] || k).join("، ") : "كل المصادر عملت في آخر تحديث."));
   return w;
 }
-const RULEAR = {support_bounce: "ارتداد من دعم", strict_support: "دعم مشدد", rsi_oversold: "RSI", bollinger_reclaim: "بولينجر"}, STANCEAR = {wait: "انتظر", buy_watch: "مراقبة شراء", sell_watch: "مراقبة بيع"};
+const RULEAR = {support_bounce: "ارتداد من دعم", strict_support: "دعم مشدد", rsi_oversold: "RSI", bollinger_reclaim: "بولينجر", taker_flow: "تدفق المشترين", poc_recover: "عودة من تحت POC", session_open: "فتح جلسة"}, STANCEAR = {wait: "انتظر", buy_watch: "مراقبة شراء", sell_watch: "مراقبة بيع"};
+const stageLabel = ed => ed.proven ? "مستوى التوصية الكاملة (" + ed.stage + "%)" : ed.stage > 0 ? "تحت المراقبة: مرحلة " + ed.stage + "% (ليست توصية)" : "لا ميزة مثبتة";
+const stageRule = "المراحل 60 ثم 70 ثم 80 ثم 90 ثم 98%. كل مرحلة تفتح بـ 200 صفقة خارج العينة على الأقل (مرحلة 60% تكفيها 100)، ونسبة نجاح بمستوى المرحلة، وصافٍ إجمالي موجب بعد الرسوم، والصفقات العالقة والمفتوحة محسوبة داخل الأرقام. 98% وحدها هي مستوى التوصية الكاملة (وبحد سحب أقل من 20%).";
 function recView(rec) {
   const w = $("div"), v = rec.value, f = n => Number(Number(n).toPrecision(7)).toString(), sg = x => (x > 0 ? "+" : "") + x, st = v.stance, ed = v.edge;
-  const top = $("div", "lvl"); top.append($("b", null, "الموقف: "), $("span", "pill " + (st === "wait" ? "p-warn" : "p-ok"), STANCEAR[st]), " ", $("span", "pill p-lbl", "فرضية"), " ", $("span", "pill p-bad", ed.proven ? "ميزة مثبتة" : "لا ميزة مثبتة"));
+  const top = $("div", "lvl"); top.append($("b", null, "الموقف: "), $("span", "pill " + (st === "wait" ? "p-warn" : "p-ok"), STANCEAR[st]), " ", $("span", "pill p-lbl", "فرضية"), " ", $("span", "pill " + (ed.stage > 0 && !ed.proven ? "p-warn" : "p-bad"), stageLabel(ed)));
   top.append($("div", "src", "عرض فقط، لا أوامر. سبوت، شراء على الهبوط وبيع على الصعود بشرائح، بدون رافعة.")); w.append(top);
   const R = {
-    no_edge: r => "لا ميزة مثبتة بعد الاختبار الرجعي: أفضل قاعدة (" + (r.best ? RULEAR[r.best.rule] || r.best.rule : "-") + ") خارج العينة " + (r.best ? sg(r.best.avg_net_pct) + "% للصفقة بعد الرسوم على " + r.best.trades + " صفقة" : "بلا صفقات") + "؛ " + r.positive + " من " + r.tested + " قواعد موجبة. الشرط للخروج من الانتظار: " + ed.min_trades + " صفقة فأكثر وصافٍ موجب.",
+    no_edge: r => "لا ميزة مثبتة بعد الاختبار الرجعي: أفضل قاعدة (" + (r.best ? RULEAR[r.best.rule] || r.best.rule : "-") + ") خارج العينة " + (r.best ? sg(r.best.avg_net_pct) + "% للصفقة بعد الرسوم على " + r.best.trades + " صفقة" : "بلا صفقات") + "؛ " + r.positive + " من " + r.tested + " قواعد موجبة" + (r.best && r.best.exits ? " (من صفقات أفضل قاعدة: عالقة بالوقت " + r.best.exits.time + "، مفتوحة " + r.best.exits.open_end + ")" : "") + ". " + stageRule,
+    stage_observation: r => "مرحلة " + r.stage + "% مفتوحة (تحت المراقبة، ليست توصية): قاعدة (" + (RULEAR[r.rule.rule] || r.rule.rule) + ") خارج العينة نجاح " + (r.rule.win_rate * 100).toFixed(1) + "% على " + r.rule.trades + " صفقة، صافٍ إجمالي " + sg(r.rule.total_net_pct) + "% بعد الرسوم. " + stageRule,
     news_wait: () => "نافذة حدث مجدول (من ساعتين قبله إلى ساعة بعده): الانتظار هو الافتراضي.",
     leak_trap: () => "احتمال تسريب أو فخ: حركة حادة قبل إصدار مجدول، لا تُلاحَق.",
     near_support: () => "السعر قريب من أقرب دعم (ضمن متوسط مدى ساعي واحد).", near_resistance: () => "السعر قريب من أقرب مقاومة (ضمن متوسط مدى ساعي واحد).", forming_bounce: () => "ارتداد يتشكل عند منطقة (وصف لما حدث وليس توقعا)."};
@@ -481,7 +484,7 @@ async function main() {
   const find = (c, f) => all.filter(x => x.r && coinOf(x.r) === c && f(x.r));
   const fx = n => Number(Number(n).toPrecision(6)).toString();
   function oneLine(key, c) {
-    const L = {rec: () => { const x = find(c, r => /^recommendation\./.test(r.id))[0]; if (!x) return ""; return STANCEAR[x.r.value.stance] + " | " + (x.r.value.edge.proven ? "ميزة مثبتة" : "لا ميزة مثبتة"); },
+    const L = {rec: () => { const x = find(c, r => /^recommendation\./.test(r.id))[0]; if (!x) return ""; return STANCEAR[x.r.value.stance] + " | " + stageLabel(x.r.value.edge); },
       watch: () => { const x = find(c, r => /^watch\./.test(r.id))[0]; if (!x) return ""; const v = x.r.value; return "آخر إغلاق " + fx(v.last_close.close) + " | " + ({above: "فوق", below: "تحت", between: "بين المستويين"}[v.state]); },
       fwd: () => { const x = find(c, r => /^forwardsummary\./.test(r.id))[0]; if (!x) return ""; return "سُجّل " + x.r.value.logged + " | حُسب " + x.r.value.scored + " | لمس المنطقة " + x.r.value.touched; },
       news: () => { const x = find(c, r => /^news\./.test(r.id))[0]; if (!x) return ""; const sx = x.r.value.stance; return (sx.wait ? "انتظر (حدث مجدول)" : "لا حدث مجدول قريب") + (sx.leak_trap ? " | احتمال تسريب أو فخ" : ""); },
@@ -501,7 +504,7 @@ async function main() {
     const h = $("div", "head"); h.append($("h2", null, c + " / USDT"));
     const hp = $("div"); hp.append("السعر الحي: "); const v = $("bdi", "val", "..."); v.id = "headprice"; v.dir = "ltr"; hp.append(v); h.append(hp);
     const rx = find(c, r => /^recommendation\./.test(r.id))[0], sv = rx ? rx.r.value : null, st = $("div"); st.append("التوصية: ", $("span", "pill " + (sv && sv.stance !== "wait" ? "p-ok" : "p-warn"), sv ? STANCEAR[sv.stance] : "انتظر"), $("span", "pill p-lbl", "فرضية"));
-    if (sv && !sv.edge.proven) st.append($("span", "pill p-bad", "لا ميزة مثبتة")); h.append(st);
+    if (sv && !sv.edge.proven) st.append($("span", "pill " + (sv.edge.stage > 0 ? "p-warn" : "p-bad"), stageLabel(sv.edge))); h.append(st);
     h.append($("div", "src", sv ? "الافتراضي هو الانتظار حتى تثبت قاعدة ميزتها خارج العينة بعد الرسوم. التفاصيل والأسباب في قسم التوصية." : "لا توصية متاحة الآن."));
     h.append($("div", "src", "حالة النظام: " + modOk + " من " + modAll + " وحدات سليمة | عمر البيانات المحفوظة " + ageH(meta.generated_at).toFixed(1) + " ساعة"));
     return h;
