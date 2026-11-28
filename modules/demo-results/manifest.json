@@ -1,0 +1,17 @@
+{
+  "id": "demo-results",
+  "name_ar": "نتائج الحساب التجريبي (ديمو، فلوس افتراضية)",
+  "name_en": "Demo account results",
+  "version": "1.0.0",
+  "kind": "compute",
+  "inputs": ["recommendation"],
+  "outputs": [{"id": "demo-results", "schema": "schema/demo-results.schema.json"}],
+  "label": "simulated",
+  "source": {"name": "Demo account summary numbers saved in this repo by hand, not fetched live", "url": "https://github.com/t8e3mp-gold/gold-dashboard/blob/main/docs/RECOMMENDATION_RULES.md"},
+  "max_age_hours": 72,
+  "schedule": "daily",
+  "run": ["python", "run.py"],
+  "permissions": {"network": false},
+  "timeout_s": 30,
+  "view": {"tab": "modules", "title": "نتائج الديمو", "type": "table"}
+}

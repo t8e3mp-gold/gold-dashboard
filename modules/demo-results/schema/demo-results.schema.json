@@ -1,0 +1,4 @@
+{"type": "object", "required": ["meta", "records"],
+ "properties": {"records": {"type": "array", "minItems": 1, "maxItems": 1,
+   "items": {"type": "object", "required": ["value", "stats", "label"], "properties": {"label": {"const": "simulated"},
+     "value": {"type": "object", "required": ["trades", "open_trades", "wins", "total_net_pct", "max_drawdown_pct", "stage", "as_of"]}}}}}}
