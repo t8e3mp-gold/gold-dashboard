@@ -1,6 +1,6 @@
 {
   "id": "backtest",
-  "name_ar": "الاختبار الرجعي (محاكاة): قواعد الدعم وRSI وبولينجر",
+  "name_ar": "الاختبار الرجعي (محاكاة): الدعم وRSI وبولينجر والتدفق وPOC والجلسات",
   "name_en": "Backtest (simulated)",
   "version": "1.0.0",
   "kind": "compute",

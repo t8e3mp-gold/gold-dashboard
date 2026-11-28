@@ -33,4 +33,28 @@ class T(unittest.TestCase):
     def test_rsi_all_up_is_100(self):
         c = [C(i, i, i, i + 1) for i in range(1, 40)]
         self.assertEqual(r1.rsi_series(c)[-1], 100.0)
+class R2(unittest.TestCase):
+    def cc(self, i, o, h, l, c, v=1.0, tb=0.5): return [i * 3600000, o, h, l, c, v, tb]
+    def test_taker_cross_up_only_once(self):   # shares: .40 .40 .60 .60 -> crosses up through .55 at t=2 only
+        c = [self.cc(i, 1, 1, 1, 1, 10, b) for i, b in enumerate([4, 4, 6, 6])]
+        self.assertEqual(r1.sig_taker(c, 1, 0.55), [(2, 0)])
+    def test_taker_uses_window_sum_not_average_of_shares(self):  # t=2: (4+0.2)/12=.35; t=3: (0.2+9.5)/12=.808 (average of shares would be .525)
+        c = [self.cc(0, 1, 1, 1, 1, 10, 4.0), self.cc(1, 1, 1, 1, 1, 10, 4.0), self.cc(2, 1, 1, 1, 1, 2, 0.2), self.cc(3, 1, 1, 1, 1, 10, 9.5)]
+        self.assertEqual(r1.sig_taker(c, 2, 0.8), [(3, 0)])
+    def test_poc_excludes_current_candle_and_finds_peak(self):
+        win = 20; c = [self.cc(i, 100, 101, 99, 100, 1.0) for i in range(win)]
+        c[5][5] = 100.0                                  # all the volume sits around typical price 100
+        c.append(self.cc(win, 100, 200, 50, 90, 1e9))     # current candle must not move its own POC
+        d = r1.poc_dist(c, win=win, bins=40)
+        self.assertIsNone(d[win - 1]); self.assertAlmostEqual(d[win], 90 / 100.0 - 1, delta=0.02)
+    def test_poc_signal_is_recovery_through_threshold(self):
+        win = 20; c = [self.cc(i, 100, 101, 99, 100, 1.0) for i in range(win)]
+        for i, cl in enumerate([95, 95, 99.9]): c.append(self.cc(win + i, cl, cl + .1, cl - .1, cl, 1.0))
+        sg = r1.sig_poc(c, 0.02, win); self.assertEqual([t for t, _ in sg], [win + 2])
+    def test_session_signal_is_candle_before_the_open_hour(self):
+        c = [self.cc(i, 1, 1, 1, 1) for i in range(48)]
+        self.assertEqual([t for t, _ in r1.sig_session(c, 8)], [7, 31])
+        self.assertEqual([t for t, _ in r1.sig_session(c, 0)], [23, 47])
+    def test_new_rules_registered(self):
+        for k in ("taker_flow", "poc_recover", "session_open"): self.assertIn(k, r1.STRATS)
 if __name__ == "__main__": unittest.main()

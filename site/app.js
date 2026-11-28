@@ -258,7 +258,7 @@ function watchView(rec) {
   const t = $("div", "src", "آخر " + v.closes.length + " إغلاقات (الأحدث أولا):");
   v.closes.slice().reverse().forEach(c => { const r = $("div"), b = $("bdi", null, new Date(c[0]).toISOString().slice(0, 10) + "  " + f(c[1])); b.dir = "ltr"; r.append(b); t.append(r); });
   l.append(t); w.append(l);
-  w.append($("div", "src", "للعرض فقط. لا إشارة ولا نصيحة، والبوابة 98% لم تتغير."));
+  w.append($("div", "src", "للعرض فقط. لا إشارة ولا نصيحة."));
   return w;
 }
 function recCard(mod, rec, sym) {

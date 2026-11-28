@@ -19,7 +19,7 @@ def fetch(sym, start_ms=0, retries=3):
                 if a == retries - 1: raise
                 time.sleep(2)
         if not rows: break
-        out += [[r[0], float(r[1]), float(r[2]), float(r[3]), float(r[4])] for r in rows]
+        out += [[r[0], float(r[1]), float(r[2]), float(r[3]), float(r[4]), float(r[5]), float(r[9])] for r in rows]   # [5]=volume, [6]=taker buy base volume
         t = rows[-1][0] + 3600000
         if len(rows) < 1000: break
     now = int(time.time() * 1000)
@@ -105,11 +105,50 @@ def sig_boll(c, n=20, k=2.0):
 
 def sig_support(c, mt): return signals(c, mt)
 
+# ---- R2 (Nov 28 2026): three alternatives to RSI. Same harness, costs, 60/40 split and exits. SIMULATED. Columns: c[5]=volume, c[6]=taker buy volume.
+def sig_taker(c, n, thr):
+    """Taker-buy share of volume over the last n candles crosses up through thr (0.5 = balanced). Uses candles up to t only."""
+    out = []; prev = None
+    for t in range(n, len(c)):
+        v = sum(x[5] for x in c[t - n + 1:t + 1]); b = sum(x[6] for x in c[t - n + 1:t + 1])
+        cur = b / v if v > 0 else None
+        if prev is not None and cur is not None and prev < thr <= cur: out.append((t, 0))
+        prev = cur
+    return out
+
+_POC = {}
+def poc_dist(c, win=168, bins=40):
+    """Distance of each close from the volume-profile POC of the previous win candles (candle t itself excluded). None if unknown."""
+    key = (len(c), c[0][0], c[-1][0], c[len(c) // 2][4], c[-1][4], win, bins)
+    if key in _POC: return _POC[key]
+    out = [None] * len(c)
+    for t in range(win, len(c)):
+        w = c[t - win:t]; lo = min(x[3] for x in w); hi = max(x[2] for x in w)
+        if hi <= lo: continue
+        step = (hi - lo) / bins; vol = [0.0] * bins
+        for x in w:
+            i = min(bins - 1, int(((x[2] + x[3] + x[4]) / 3 - lo) / step)); vol[i] += x[5]
+        j = max(range(bins), key=lambda i: vol[i]); poc = lo + (j + 0.5) * step
+        out[t] = c[t][4] / poc - 1
+    _POC[key] = out; return out
+
+def sig_poc(c, d, win=168):
+    """Close recovers up through (POC - d), i.e. was more than d below the 7-day POC on the previous candle and no longer is."""
+    x = poc_dist(c, win)
+    return [(t, 0) for t in range(1, len(c)) if x[t - 1] is not None and x[t] is not None and x[t - 1] < -d <= x[t]]
+
+def sig_session(c, h):
+    """Entry at the open of the UTC hour h every day (signal = the candle before it closes). Tests whether a time of day adds anything over the baseline."""
+    return [(t, 0) for t in range(len(c)) if (c[t][0] // 3600000) % 24 == (h - 1) % 24]
+
 STRATS = {
     "support_bounce": {"name_ar": "ارتداد من دعم", "params": [{"mt": m} for m in (1, 2)], "gen": lambda c, p: signals(c, p["mt"])},
     "strict_support": {"name_ar": "دعم مشدد (3 لمسات فأكثر)", "params": [{"mt": 3}], "gen": lambda c, p: signals(c, p["mt"])},
     "rsi_oversold": {"name_ar": "RSI يعود فوق حد التشبع", "params": [{"thr": t} for t in (25, 30, 35)], "gen": lambda c, p: sig_rsi(c, p["thr"])},
     "bollinger_reclaim": {"name_ar": "عودة داخل نطاق بولينجر", "params": [{}], "gen": lambda c, p: sig_boll(c)},
+    "taker_flow": {"name_ar": "حصة المشترين في الحجم ترتفع (تدفق)", "params": [{"n": 6, "thr": 0.52}, {"n": 6, "thr": 0.55}, {"n": 24, "thr": 0.52}], "gen": lambda c, p: sig_taker(c, p["n"], p["thr"])},
+    "poc_recover": {"name_ar": "عودة من تحت أكثر سعر تداولا 7 أيام (POC)", "params": [{"d": 0.005}, {"d": 0.01}, {"d": 0.02}], "gen": lambda c, p: sig_poc(c, p["d"])},
+    "session_open": {"name_ar": "دخول عند فتح جلسة (توقيت UTC)", "params": [{"h": 0}, {"h": 8}, {"h": 14}], "gen": lambda c, p: sig_session(c, p["h"])},
 }
 EXITS = [(tp, sl, 48, tr) for tp in (0.005, 0.01, 0.015, 0.02) for sl in (0.01, 0.02, 0.04) for tr in (False, True)]
 
