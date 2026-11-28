@@ -1,0 +1,4 @@
+{"type": "object", "required": ["meta", "records"],
+ "properties": {"records": {"type": "array", "minItems": 1, "maxItems": 1,
+   "items": {"type": "object", "required": ["value", "stats", "label"], "properties": {"label": {"const": "measured"},
+     "value": {"type": "object", "required": ["levels", "last_close", "state", "closes"]}}}}}}
