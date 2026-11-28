@@ -1,6 +1,6 @@
 {
- "checked": "2026-11-27",
- "note": "BLS events refreshed automatically from the BLS iCal feed by tools/calendar_sync.py on 2026-11-27; other events as committed. 08:30 America/New_York.",
+ "checked": "2026-11-28",
+ "note": "BLS events refreshed automatically from the BLS iCal feed by tools/calendar_sync.py on 2026-11-28; other events as committed. 08:30 America/New_York.",
  "events": [
   {
    "title": "US jobs report (NFP)",
